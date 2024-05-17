@@ -1,8 +1,8 @@
 export const level = {
     easy: 28,
-    medium: 37,
-    hard: 45,
-    master: 65,
+    medium: 35,
+    hard: 40,
+    master: 52,
     insane: 81,
 };
 
@@ -39,7 +39,7 @@ function computeUnitsAndPeers() {
         const unique = new Set([...sameRow, ...sameCol, ...sameBox]);
         unique.delete(sid);
 
-        peers[sid] = unique;
+        peers[sid] = [...unique];
     }
 
     return [units, peers];
@@ -52,10 +52,10 @@ const [ UNITS, PEERS ] = computeUnitsAndPeers();
  * or return false if a contradiction is detected.
  */
 function parseGrid(grid) {
-    const values = new Map();
+    const values = {};
 
     for (const sid of SQUARES) {
-        values.set(sid, new Set(DIGITS));
+        values[sid] = [...DIGITS];
     }
 
     for (let i = 0; i < 81; i++) {
@@ -74,8 +74,7 @@ function parseGrid(grid) {
  * Return values, except return False if a contradiction is detected.
  */
 function assign(values, s, d) {
-    const others = [...values.get(s)].filter(x => x !== d);
-
+    const others = values[s].filter(x => x !== d);
     for (const d2 of others) {
         eliminate(values, s, d2);
     }
@@ -86,16 +85,16 @@ function assign(values, s, d) {
  * Return values, except return False if a contradiction is detected.
  */
 function eliminate(values, s, d) {
-    if (!values.get(s).has(d))
+    if (!values[s].includes(d))
         return;
 
-    values.set(s, new Set([...values.get(s)].filter(x => x !== d)));
+    values[s] = values[s].filter(x => x !== d);
 
-    if (!values.get(s).size) {
+    if (!values[s].length) {
         throw new Error('backtrack');
     } 
-    if (values.get(s).size === 1) {
-        let d2 = [...values.get(s)][0];
+    if (values[s].length === 1) {
+        const d2 = values[s][0];
 
         for (const s2 of PEERS[s]) {
             eliminate(values, s2, d2);
@@ -104,7 +103,7 @@ function eliminate(values, s, d) {
 
     for (let unit of UNITS[s]) {
         let dplaces = unit.filter(s2 => {
-            return values.get(s2).has(d);
+            return values[s2].includes(d);
         });
 
         if (!dplaces.length) {
@@ -117,16 +116,16 @@ function eliminate(values, s, d) {
     }
 }
 
-function *searchAll(values) {
-    const unsolved = SQUARES.filter(s => values.get(s).size > 1);
+function * searchAll(values) {
+    const unsolved = SQUARES.filter(s => values[s].length > 1);
 
     if (unsolved.length === 0) {
         yield values;
     } else {
-        const s = unsolved.sort((s1, s2) => values.get(s1).size - values.get(s2).size)[0];
+        const s = unsolved.sort((s1, s2) => values[s1].length - values[s2].length)[0];
 
-        for (const d of values.get(s)) {
-            const dup = new Map(values);
+        for (const d of values[s]) {
+            const dup = { ...values };
             try {
                 assign(dup, s, d);
                 yield * searchAll(dup);
@@ -151,29 +150,26 @@ function shuffle (seq) {
 }
 
 function randomSolution() {
-    const values = new Map();
-    SQUARES.forEach(s => values.set(s, new Set(DIGITS)));
+    const values = {};
+    SQUARES.forEach(s => values[s] = [...DIGITS]);
 
     for (let s of shuffle(SQUARES)) {
         try {
-            assign(values, s, randomChoice(values.get(s)));
+            assign(values, s, randomChoice(values[s]));
         } catch(err) {
             break;
         }
 
-        let ds = SQUARES.filter(s => values.get(s).size === 1)
-            .map(s => values.get(s));
-
+        const ds = SQUARES.filter(s => values[s].length === 1).map(s => values[s]);
         if (ds.length === 81) {
-            return SQUARES.map(s => [...values.get(s)][0]).join('');
+            return SQUARES.map(s => values[s][0]).join('');
         }
     }
 
     return randomSolution();
 }
 
-function randomChoice(values) {
-    const array = [...values];
+function randomChoice(array) {
     return array[Math.floor(Math.random() * array.length)];
 }
 
