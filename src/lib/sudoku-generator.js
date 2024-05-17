@@ -150,7 +150,7 @@ function shuffle (seq) {
     return array;
 }
 
-function randomPuzzle() {
+function randomSolution() {
     const values = new Map();
     SQUARES.forEach(s => values.set(s, new Set(DIGITS)));
 
@@ -169,7 +169,7 @@ function randomPuzzle() {
         }
     }
 
-    return randomPuzzle();
+    return randomSolution();
 }
 
 function randomChoice(values) {
@@ -190,13 +190,12 @@ function hasUniqueSolution (sudoku) {
     return solution !== null;
 }
 
-export function createPuzzle(level = 81) {
-    const solution = randomPuzzle();
+export function createPuzzle({level = 81} = {}) {
+    const solution = randomSolution();
     let shuffled = shuffle(SQUARES);
 
     const puzzle = Object.fromEntries(SQUARES.map((sid,i) => [sid, solution[i]]));
 
-    let difficulty = 0;
     for (const sid of shuffled) {
         const saved = puzzle[sid];
         puzzle[sid] = '.';
@@ -204,8 +203,8 @@ export function createPuzzle(level = 81) {
         if (!hasUniqueSolution(totry)) {
             puzzle[sid] = saved;
         } else {
-            difficulty += 1;
-            if (difficulty >= level) {
+            level -= 1;
+            if (level <= 0) {
                 break;
             }
         }
