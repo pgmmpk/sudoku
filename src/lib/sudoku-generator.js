@@ -1,26 +1,3 @@
-/**
- * A JavaScript port based on "Solving Every Sudoku Puzzle"
- * by Peter Norvig.
- *
- * The article can be found here:
- * - http://norvig.com/sudoku.html
- *
- * The original Python source can be found here:
- * - https://github.com/norvig/pytudes/blob/master/sudoku.py
- */
-
-import {
-    getCols,
-    getSquares,
-    getUnitList,
-    getUnits,
-    getPeers,
-    some,
-    shuffle,
-    all,
-    getRandomInt
-} from './sudoku-grid-util.js';
-
 export const level = {
     easy: 28,
     medium: 37,
@@ -29,41 +6,64 @@ export const level = {
     insane: 81,
 };
 
-const digits = getCols();
-const squares = getSquares();
-const unitlist = getUnitList();
+const ROWS = 'ABCDEFGHI'
+const COLS = '123456789';
+const DIGITS = COLS;
 
-const units = getUnits(squares, unitlist);
-const peers = getPeers(squares, units);
+function cross(listA, listB) {
+    return [...listA].map(a => [...listB].map(b => [a, b])).flat();
+}
+
+const SQUARES = cross(ROWS, COLS).map(([r,c]) => `${r}${c}`);
+
+function computeUnitsAndPeers() {
+    const units = {};
+    const peers = {};
+
+    const boxes = cross(['ABC', 'DEF', 'GHI'], ['123', '456', '789']).map(
+        ([rows, cols]) => cross(rows, cols).map(([r,c]) => `${r}${c}`)
+    );
+
+    for (const sid of SQUARES) {
+        const [r, c] = sid;
+        const sameRow = [...COLS].map(x => `${r}${x}`);
+        const sameCol = [...ROWS].map(x => `${x}${c}`);
+        const sameBox = boxes.filter(box => box.includes(sid))[0];
+
+        units[sid] = [
+            sameRow,
+            sameCol,
+            sameBox,
+        ];
+
+        const unique = new Set([...sameRow, ...sameCol, ...sameBox]);
+        unique.delete(sid);
+
+        peers[sid] = unique;
+    }
+
+    return [units, peers];
+}
+
+const [ UNITS, PEERS ] = computeUnitsAndPeers();
 
 /**
- * Convert grid to a dict of possible values, {square: digits},
+ * Convert grid to a dict of possible values, {square: DIGITS},
  * or return false if a contradiction is detected.
  */
 function parseGrid(grid) {
-    let values = new Map();
-    squares.forEach(s => values.set(s, digits));
+    const values = new Map();
 
-    for (let [s, d] of gridValues(grid).entries()) {
-        if (digits.has(d)) {
-            assign(values, s, d);
-        }
+    for (const sid of SQUARES) {
+        values.set(sid, new Set(DIGITS));
     }
 
-    return values;
-}
-
-/**
- * Convert grid into a dict of {square: char} with '0' or '.' for empties.
- */
-function gridValues(grid) {
-    console.log(grid)
-    let chars = [...grid].filter(c => digits.has(c) || c === '0' || c === '.');
-    let values = new Map();
-    let s = [...squares];
-
-    for (let i = 0; i < s.length; i++) {
-        values.set(s[i], chars[i]);
+    for (let i = 0; i < 81; i++) {
+        const s = SQUARES[i];
+        const d = grid[i];
+        if (DIGITS.includes(d)) {
+            assign(values, s, d);
+        }
     }
 
     return values;
@@ -97,13 +97,15 @@ function eliminate(values, s, d) {
     if (values.get(s).size === 1) {
         let d2 = [...values.get(s)][0];
 
-        for (const s2 of peers.get(s)) {
+        for (const s2 of PEERS[s]) {
             eliminate(values, s2, d2);
         }
     }
 
-    for (let unit of units.get(s)) {
-        let dplaces = [...unit].filter(s2 => values.get(s2).has(d));
+    for (let unit of UNITS[s]) {
+        let dplaces = unit.filter(s2 => {
+            return values.get(s2).has(d);
+        });
 
         if (!dplaces.length) {
             throw new Error('backtrack');
@@ -115,41 +117,13 @@ function eliminate(values, s, d) {
     }
 }
 
-function solve(grid) {
-    return search(parseGrid(grid));
-}
-
-/**
- * Using depth-first search and propagation, try all possible values.
- */
-function search(values) {
-    if (all([...squares].map(s => values.get(s).size === 1)))
-        return values;
-
-    const s = [...squares]
-        .filter(s => values.get(s).size > 1)
-        .sort((s1, s2) => values.get(s1).size - values.get(s2).size)[0];
-
-    for (const d of values.get(s)) {
-        const dup = new Map(values);
-        try {
-            assign(dup, s, d);
-            return search(dup);
-        } catch(err) {
-
-        }
-    }
-
-    throw new Error('backtrack');
-}
-
 function *searchAll(values) {
-    if (all([...squares].map(s => values.get(s).size === 1))) {
+    const unsolved = SQUARES.filter(s => values.get(s).size > 1);
+
+    if (unsolved.length === 0) {
         yield values;
     } else {
-        const s = [...squares]
-            .filter(s => values.get(s).size > 1)
-            .sort((s1, s2) => values.get(s1).size - values.get(s2).size)[0];
+        const s = unsolved.sort((s1, s2) => values.get(s1).size - values.get(s2).size)[0];
 
         for (const d of values.get(s)) {
             const dup = new Map(values);
@@ -162,32 +136,45 @@ function *searchAll(values) {
     }
 }
 
-function randomPuzzle() {
-    let values = new Map();
-    squares.forEach(s => values.set(s, digits));
+/**
+ * Durstenfeld shuffle
+ * https://stackoverflow.com/questions/2450954/how-to-randomize-shuffle-a-javascript-array
+ */
+function shuffle (seq) {
+    const array = [...seq];
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
 
-    for (let s of shuffle(squares)) {
+    return array;
+}
+
+function randomPuzzle() {
+    const values = new Map();
+    SQUARES.forEach(s => values.set(s, new Set(DIGITS)));
+
+    for (let s of shuffle(SQUARES)) {
         try {
-            assign(values, s, randomValue(values.get(s)));
+            assign(values, s, randomChoice(values.get(s)));
         } catch(err) {
             break;
         }
 
-        let ds = [...squares]
-            .filter(s => values.get(s).size === 1)
+        let ds = SQUARES.filter(s => values.get(s).size === 1)
             .map(s => values.get(s));
 
         if (ds.length === 81) {
-            return [...squares]
-                .map(s => [...values.get(s)][0]).join('');
+            return SQUARES.map(s => [...values.get(s)][0]).join('');
         }
     }
 
     return randomPuzzle();
 }
 
-function randomValue(values) {
-    return [...values][getRandomInt(0, values.size - 1)];
+function randomChoice(values) {
+    const array = [...values];
+    return array[Math.floor(Math.random() * array.length)];
 }
 
 function hasUniqueSolution (sudoku) {
@@ -205,15 +192,15 @@ function hasUniqueSolution (sudoku) {
 
 export function createPuzzle(level = 81) {
     const solution = randomPuzzle();
-    let shuffled = shuffle(squares);
+    let shuffled = shuffle(SQUARES);
 
-    const puzzle = Object.fromEntries([...squares].map((sid,i) => [sid, solution[i]]));
+    const puzzle = Object.fromEntries(SQUARES.map((sid,i) => [sid, solution[i]]));
 
     let difficulty = 0;
     for (const sid of shuffled) {
         const saved = puzzle[sid];
         puzzle[sid] = '.';
-        const totry = [...squares].map(sid => puzzle[sid]).join('');
+        const totry = SQUARES.map(sid => puzzle[sid]).join('');
         if (!hasUniqueSolution(totry)) {
             puzzle[sid] = saved;
         } else {
@@ -225,7 +212,7 @@ export function createPuzzle(level = 81) {
     }
 
     return {
-        puzzle: [...squares].map(sid => puzzle[sid]).join(''),
+        puzzle: SQUARES.map(sid => puzzle[sid]).join(''),
         solution,
     };
 }

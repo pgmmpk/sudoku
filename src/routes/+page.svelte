@@ -146,7 +146,7 @@
     const game = new Board(createPuzzle(80).puzzle);
     
     function reset() {
-        board = new Board(createPuzzle(1).puzzle);
+        board = new Board(createPuzzle(20).puzzle);
     }
 
     let board = $state(new Board(game));
