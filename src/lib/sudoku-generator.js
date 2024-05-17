@@ -52,10 +52,10 @@ const [ UNITS, PEERS ] = computeUnitsAndPeers();
  * or return false if a contradiction is detected.
  */
 function parseGrid(grid) {
-    const values = {};
+    const values = new Map();
 
     for (const sid of SQUARES) {
-        values[sid] = [...DIGITS];
+        values.set(sid, [...DIGITS]);
     }
 
     for (let i = 0; i < 81; i++) {
@@ -74,7 +74,8 @@ function parseGrid(grid) {
  * Return values, except return False if a contradiction is detected.
  */
 function assign(values, s, d) {
-    const others = values[s].filter(x => x !== d);
+    const others = values.get(s).filter(x => x !== d);
+
     for (const d2 of others) {
         eliminate(values, s, d2);
     }
@@ -85,16 +86,16 @@ function assign(values, s, d) {
  * Return values, except return False if a contradiction is detected.
  */
 function eliminate(values, s, d) {
-    if (!values[s].includes(d))
+    if (!values.get(s).includes(d))
         return;
 
-    values[s] = values[s].filter(x => x !== d);
+    values.set(s, values.get(s).filter(x => x !== d));
 
-    if (!values[s].length) {
+    if (!values.get(s).length) {
         throw new Error('backtrack');
     } 
-    if (values[s].length === 1) {
-        const d2 = values[s][0];
+    if (values.get(s).length === 1) {
+        let d2 = values.get(s)[0];
 
         for (const s2 of PEERS[s]) {
             eliminate(values, s2, d2);
@@ -103,7 +104,7 @@ function eliminate(values, s, d) {
 
     for (let unit of UNITS[s]) {
         let dplaces = unit.filter(s2 => {
-            return values[s2].includes(d);
+            return values.get(s2).includes(d);
         });
 
         if (!dplaces.length) {
@@ -116,20 +117,23 @@ function eliminate(values, s, d) {
     }
 }
 
-function * searchAll(values) {
-    const unsolved = SQUARES.filter(s => values[s].length > 1);
+function *searchAll(values) {
+    const unsolved = SQUARES.filter(s => values.get(s).length > 1);
 
     if (unsolved.length === 0) {
         yield values;
     } else {
-        const s = unsolved.sort((s1, s2) => values[s1].length - values[s2].length)[0];
+        const s = unsolved.sort((s1, s2) => values.get(s1).length - values.get(s2).length)[0];
 
-        for (const d of values[s]) {
-            const dup = { ...values };
+        for (const d of values.get(s)) {
+            const dup = new Map(values);
             try {
                 assign(dup, s, d);
                 yield * searchAll(dup);
             } catch(err) {
+                if (err.message !== 'backtrack') {
+                    throw err;
+                }
             }
         }
     }
@@ -150,19 +154,24 @@ function shuffle (seq) {
 }
 
 function randomSolution() {
-    const values = {};
-    SQUARES.forEach(s => values[s] = [...DIGITS]);
+    const values = new Map();
+    SQUARES.forEach(s => values.set(s, [...DIGITS]));
 
     for (let s of shuffle(SQUARES)) {
         try {
-            assign(values, s, randomChoice(values[s]));
+            assign(values, s, randomChoice(values.get(s)));
         } catch(err) {
+            if (err.message !== 'backtrack') {
+                throw err;
+            }
             break;
         }
 
-        const ds = SQUARES.filter(s => values[s].length === 1).map(s => values[s]);
+        let ds = SQUARES.filter(s => values.get(s).length === 1)
+            .map(s => values.get(s));
+
         if (ds.length === 81) {
-            return SQUARES.map(s => values[s][0]).join('');
+            return SQUARES.map(s => values.get(s)[0]).join('');
         }
     }
 
