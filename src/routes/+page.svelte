@@ -164,7 +164,9 @@
         }
     }
 
-    let board = $state(new Board(createPuzzle({level})));
+    let puzzle = $state(createPuzzle(level).puzzle);
+
+    let board = $state(new Board(puzzle));
 
     let selected = $state(4*9 + 4);  // center cell selected
     let activeDigit = $derived(board.cells[selected].digit);
@@ -274,7 +276,7 @@
     $inspect({active})
 </script>
 
-<div class="flex flex-col items-center justify-center">
+<div class="flex flex-col items-center justify-center m-2">
     <Settings bind:level={level} bind:active={active} />
     <BoardComponent {board} onclick={handleCellClick} {selected} {activeDigit} />
     <Control {oncommand} />

@@ -16,7 +16,7 @@
 
 <div class="border border-gray-400 text-gray-700" class:bg-blue-300={isSelected} class:bg-blue-50={isSelectedCol || isSelectedRow || isSelectedBlock} class:bg-blue-200={isActive}>
 {#if digit}
-<div class="flex items-center justify-center font-extralight text-7xl aspect-square" class:text-red-700={error} class:text-blue-700={!frozen && !error} onclick={() => onclick && onclick(id)} role="presentation">
+<div class="flex items-center justify-center font-light text-7xl aspect-square" class:text-red-700={error} class:text-blue-700={!frozen && !error} onclick={() => onclick && onclick(id)} role="presentation">
     <div class="cell">{digit}</div>
 </div>
 {:else if notes}    
