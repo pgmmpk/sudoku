@@ -1,9 +1,9 @@
-export const level = {
-    easy: 28,
-    medium: 35,
-    hard: 40,
-    master: 52,
-    insane: 81,
+export const LEVEL = {
+    EASY:   28,
+    MEDIUM: 35,
+    HARD:   40,
+    MASTER: 52,
+    INSANE: 64,
 };
 
 const ROWS = 'ABCDEFGHI'
@@ -16,7 +16,7 @@ function cross(listA, listB) {
 
 const SQUARES = cross(ROWS, COLS).map(([r,c]) => `${r}${c}`);
 
-function computeUnitsAndPeers() {
+const [ UNITS, PEERS ] = (() => {
     const units = {};
     const peers = {};
 
@@ -43,14 +43,26 @@ function computeUnitsAndPeers() {
     }
 
     return [units, peers];
+})();
+
+function randomChoice(array) {
+    return array[Math.floor(Math.random() * array.length)];
 }
 
-const [ UNITS, PEERS ] = computeUnitsAndPeers();
-
-/**
- * Convert grid to a dict of possible values, {square: DIGITS},
- * or return false if a contradiction is detected.
+/*
+ * Durstenfeld shuffle
+ * https://stackoverflow.com/questions/2450954/how-to-randomize-shuffle-a-javascript-array
  */
+function shuffle (seq) {
+    const array = [...seq];
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+
+    return array;
+}
+
 function parseGrid(grid) {
     const values = new Map();
 
@@ -69,22 +81,12 @@ function parseGrid(grid) {
     return values;
 }
 
-/**
- * Eliminate all the other values (except d) from values[s] and propagate.
- * Return values, except return False if a contradiction is detected.
- */
 function assign(values, s, d) {
-    const others = values.get(s).filter(x => x !== d);
-
-    for (const d2 of others) {
-        eliminate(values, s, d2);
+    for (const d2 of values.get(s)) {
+        if (d2 !== d) eliminate(values, s, d2);
     }
 }
 
-/**
- * Eliminate d from values[s]; propagate when values or places <= 2.
- * Return values, except return False if a contradiction is detected.
- */
 function eliminate(values, s, d) {
     if (!values.get(s).includes(d))
         return;
@@ -95,7 +97,7 @@ function eliminate(values, s, d) {
         throw new Error('backtrack');
     } 
     if (values.get(s).length === 1) {
-        let d2 = values.get(s)[0];
+        const d2 = values.get(s)[0];
 
         for (const s2 of PEERS[s]) {
             eliminate(values, s2, d2);
@@ -103,7 +105,7 @@ function eliminate(values, s, d) {
     }
 
     for (let unit of UNITS[s]) {
-        let dplaces = unit.filter(s2 => {
+        const dplaces = unit.filter(s2 => {
             return values.get(s2).includes(d);
         });
 
@@ -117,7 +119,7 @@ function eliminate(values, s, d) {
     }
 }
 
-function *searchAll(values) {
+function * searchAll(values) {
     const unsolved = SQUARES.filter(s => values.get(s).length > 1);
 
     if (unsolved.length === 0) {
@@ -137,20 +139,6 @@ function *searchAll(values) {
             }
         }
     }
-}
-
-/**
- * Durstenfeld shuffle
- * https://stackoverflow.com/questions/2450954/how-to-randomize-shuffle-a-javascript-array
- */
-function shuffle (seq) {
-    const array = [...seq];
-    for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
-    }
-
-    return array;
 }
 
 function randomSolution() {
@@ -178,10 +166,6 @@ function randomSolution() {
     return randomSolution();
 }
 
-function randomChoice(array) {
-    return array[Math.floor(Math.random() * array.length)];
-}
-
 function hasUniqueSolution (sudoku) {
     let solution = null;
 
@@ -195,18 +179,50 @@ function hasUniqueSolution (sudoku) {
     return solution !== null;
 }
 
+/**
+ * Generates sudoku puzzle and its solution.
+ * 
+ * Takes "level of difficulty" parameter, which is in integer in the range 1 - 64.
+ * 
+ * We define difficulty as the number of empty cells.
+ * It is a well-known fact that the max theoretical sudoku difficulty is 81-17 = 64.
+ * 
+ * The "level" parameter is the max level that method will return. When asked to generate very tought
+ * puzzles, it will often return less difficult ones. Here is the distribution of actual difficulties
+ * when asked to generate an impossibly difficult puzzle:
+
+    52 => 2
+    53 => 24,
+    54 => 267,
+    55 => 1205,
+    56 => 2968,
+    57 => 3410,
+    58 => 1724,
+    59 => 370,
+    60 => 30,
+
+ * As you can see, it rarely generates 60, and most commonly produces 57. For difficulties 50 and less,
+ * we will very likely generate just the one user asks for. 
+ * 
+ * Speed of this function is about 80ms per call. Clients may want to improve chances of generating tough
+ * puzzles by calling this function in a loop, and checking the actual difficulty. For difficulties up to and
+ * including 56, this may be a good idea, as such a loop will (on average) be executed just twice, resulting
+ * in 160ms response. For higher difficulties, cost of ensuring exact difficulty will be higher.
+ * 
+ * We believe there is no point in trying to get this "difficulty" match exactly the requested "level",
+ * because subjective Sudoku toughness is not determined solely by the number of hidden squares, but
+ * depends on the techniques and methods required to solve it.
+ */
 export function createPuzzle({level = 81} = {}) {
     const solution = randomSolution();
-    let shuffled = shuffle(SQUARES);
+    const shuffled = shuffle(SQUARES.map((_,i) => i));
+    const puzzle = [...solution];
 
-    const puzzle = Object.fromEntries(SQUARES.map((sid,i) => [sid, solution[i]]));
-
-    for (const sid of shuffled) {
-        const saved = puzzle[sid];
-        puzzle[sid] = '.';
-        const totry = SQUARES.map(sid => puzzle[sid]).join('');
-        if (!hasUniqueSolution(totry)) {
-            puzzle[sid] = saved;
+    for (const index of shuffled) {
+        const saved = puzzle[index];
+        puzzle[index] = '.';
+        if (!hasUniqueSolution(puzzle)) {
+            puzzle[index] = saved;
         } else {
             level -= 1;
             if (level <= 0) {
@@ -216,7 +232,13 @@ export function createPuzzle({level = 81} = {}) {
     }
 
     return {
-        puzzle: SQUARES.map(sid => puzzle[sid]).join(''),
+        puzzle: puzzle.join(''),
         solution,
     };
+}
+
+export function solve (sudoku) {
+    for (const solution of searchAll(parseGrid(sudoku))) {
+        return SQUARES.map(sid => solution.get(sid)[0]).join('');
+    }
 }

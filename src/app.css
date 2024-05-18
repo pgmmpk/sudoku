@@ -3,5 +3,5 @@
 @tailwind utilities;
 
 body {
-    --size: calc(min(100vw, 100vh))
+    --size: calc(min(100vw, 100vh, 600px))
 }

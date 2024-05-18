@@ -1,14 +1,17 @@
 import { createPuzzle } from "./sudoku-generator.js";
 
-for (let i = 0; i < 100; i++) {
-    createPuzzle({level: 81});
+const givens = new Map();
+for (let i = 0; i < 10000; i++) {
+    const p = createPuzzle({level: 81});
+    const numGivens = [...p.puzzle].filter(c => c != '.').length;
+    givens.set(numGivens, 1 + (givens.get(numGivens) || 0));
+    if (i % 100 === 0) {
+        const total = [...givens.values()].reduce((p, v) => p + v, 0);
+        console.log(givens)
+    }
 }
 
-// const givens = [];
-// for (let i = 0; i < 1000; i++) {
-//     const p = createPuzzle({level: 55});
-//     givens.push([...p.puzzle].filter(c => c != '.').length);
-// }
+console.log(givens);
 
 // console.log(Math.min(...givens), Math.max(...givens))
 
@@ -21,3 +24,19 @@ for (let i = 0; i < 100; i++) {
  * 
  * level: 55, actual givens 24-28 in 1000 tries (53-55 difficulty)
  */
+/*
+
+
+
+Map(9) {
+  25 => 2968,
+  26 => 1205,
+  24 => 3410,
+  23 => 1724,
+  27 => 267,
+  22 => 370,
+  21 => 30,
+  28 => 24,
+  29 => 2
+}
+*/

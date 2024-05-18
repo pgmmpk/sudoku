@@ -1,7 +1,9 @@
 <script>
     import BoardComponent from './Board.svelte';
-    import { createPuzzle } from '$lib/sudoku-generator.js';
+    import { createPuzzle, LEVEL } from '$lib/sudoku-generator.js';
     import Mousetrap from 'mousetrap';
+    import Control from './Control.svelte';
+    import Settings from './Settings.svelte';
 
     function row (index) {
         return Math.floor(index / 9);
@@ -143,13 +145,26 @@
 
     // const game = '.8291763.1..8.6....6....58...54.9.7.9.4.6.12......5..6.7638.....9..7436.3586.24.7';
     //const game = '68.7....2..9...8..3...9.............7..91.48.....38.75..13.56...5..6.3.......7..9'
-    const game = new Board(createPuzzle(80).puzzle);
+    let level = $state(64);
     
-    function reset() {
-        board = new Board(createPuzzle(20).puzzle);
+    function oncommand(cmd) {
+        const { command } = cmd;
+
+        if (command === 'reset') {
+            board = new Board(createPuzzle({level}).puzzle);
+            undoStack.length = 0;
+        } else if (command === 'fill') {
+            push(fill(+cmd.digit));
+        } else if (command === 'toggle-note') {
+            push(toggleNote(+cmd.digit));
+        } else if (command === 'undo') {
+            undo();
+        } else if (command === 'settings') {
+            active = true;
+        }
     }
 
-    let board = $state(new Board(game));
+    let board = $state(new Board(createPuzzle({level})));
 
     let selected = $state(4*9 + 4);  // center cell selected
     let activeDigit = $derived(board.cells[selected].digit);
@@ -253,9 +268,14 @@
     Mousetrap.bind ('ctrl+7', () => push(toggleNote(7)));
     Mousetrap.bind ('ctrl+8', () => push(toggleNote(8)));
     Mousetrap.bind ('ctrl+9', () => push(toggleNote(9)));
+
+    let active = $state(false);
+
+    $inspect({active})
 </script>
 
-<div class="m-16">
-    <button onclick={reset}>Reset</button>
+<div class="flex flex-col items-center justify-center">
+    <Settings bind:level={level} bind:active={active} />
     <BoardComponent {board} onclick={handleCellClick} {selected} {activeDigit} />
+    <Control {oncommand} />
 </div>
