@@ -3,8 +3,8 @@
 
     async function share () {
         const self = {
-            title: 'Talk Back',
-            url: 'https://talkback.kroutikov.net',
+            title: 'Sudoku',
+            url: 'https://sudoku.kroutikov.net',
         };
         if (navigator.canShare && navigator.canShare(self)) {
             await navigator.share(self);
