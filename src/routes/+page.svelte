@@ -1,9 +1,11 @@
 <script>
     import BoardComponent from './Board.svelte';
-    import { createPuzzle, LEVEL } from '$lib/sudoku-generator.js';
+    import { createPuzzle } from '$lib/sudoku-generator.js';
     import Mousetrap from 'mousetrap';
     import Control from './Control.svelte';
     import Settings from './Settings.svelte';
+    import Header from './Header.svelte';
+    import { level } from './level.svelte.js';
 
     function row (index) {
         return Math.floor(index / 9);
@@ -145,13 +147,13 @@
 
     // const game = '.8291763.1..8.6....6....58...54.9.7.9.4.6.12......5..6.7638.....9..7436.3586.24.7';
     //const game = '68.7....2..9...8..3...9.............7..91.48.....38.75..13.56...5..6.3.......7..9'
-    let level = $state(64);
     
     function oncommand(cmd) {
         const { command } = cmd;
 
         if (command === 'reset') {
-            board = new Board(createPuzzle({level}).puzzle);
+            console.log({reset: level.value})
+            board = new Board(createPuzzle({level: level.value}).puzzle);
             undoStack.length = 0;
         } else if (command === 'fill') {
             push(fill(+cmd.digit));
@@ -164,7 +166,7 @@
         }
     }
 
-    let puzzle = $state(createPuzzle(level).puzzle);
+    let puzzle = $state(createPuzzle({level: level.value}).puzzle);
 
     let board = $state(new Board(puzzle));
 
@@ -274,10 +276,13 @@
     let active = $state(false);
 
     $inspect({active})
+
+    import Chooser from './Chooser.svelte';
 </script>
 
 <div class="flex flex-col items-center justify-center m-2">
-    <Settings bind:level={level} bind:active={active} />
+    <Settings bind:active={active} />
+    <Header />
     <BoardComponent {board} onclick={handleCellClick} {selected} {activeDigit} />
     <Control {oncommand} />
 </div>
