@@ -160,7 +160,7 @@
         } else if (command === 'undo') {
             undo();
         } else if (command === 'settings') {
-            active = true;
+            settingsActive = true;
         }
     }
 
