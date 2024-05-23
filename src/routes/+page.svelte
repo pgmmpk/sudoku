@@ -174,7 +174,7 @@
 
     function handleCellClick (id) {
         selected = id;
-        navigator.vibrate(30);
+        navigator.vibrate(10);
     }
 
     function noop() {}
