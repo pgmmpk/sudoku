@@ -1,4 +1,5 @@
 import { createPuzzle } from "../lib/sudoku-generator.js";
+import { level } from './level.svelte.js';
 
 class Game {
     _level = $state(0);
@@ -6,15 +7,15 @@ class Game {
     _solution = $state('.................................................................................');
     _mistakes = $state(0);
 
-    constructor ({ level, board, solution }) {
-        this._level = level;
+    constructor ({ board, solution }) {
+        this._level = level.value;
         this._board = board;
         this._solution = solution;
         this._mistakes = 0;
     }
 
-    reset (level) {
-        const { board, solution } = createPuzzle(level);
+    reset () {
+        const { board, solution } = createPuzzle(level.value);
         this._level = level;
         this._board = board;
         this._solution = solution;
@@ -38,4 +39,4 @@ class Game {
     }
 }
 
-export const level = new Level();
+export const game = new Game();

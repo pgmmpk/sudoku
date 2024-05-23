@@ -75,7 +75,6 @@
 
     class Board {
         constructor (boardString) {
-            console.log({boardString})
             this.cells = {};
             for (let i = 0; i < 9; i++) {
                 for (let j = 0; j < 9; j++) {
@@ -123,14 +122,13 @@
                     continue;
                 }
 
-                let conflict = false;
+                this.cells[i].error = false;
                 for (const peer of this.peers[i]) {
                     if (this.cells[peer].digit == this.cells[i].digit) {
-                        conflict = true;
+                        this.cells[i].error = true;
+                        break;
                     }
                 }
-
-                this.cells[i].error = conflict;
             }
         }
 
@@ -169,6 +167,7 @@
     let puzzle = $state(createPuzzle({level: level.value}).puzzle);
 
     let board = $state(new Board(puzzle));
+    let solved = $derived(board.isSolved());
 
     let selected = $state(4*9 + 4);  // center cell selected
     let activeDigit = $derived(board.cells[selected].digit);
@@ -273,16 +272,12 @@
     Mousetrap.bind ('ctrl+8', () => push(toggleNote(8)));
     Mousetrap.bind ('ctrl+9', () => push(toggleNote(9)));
 
-    let active = $state(false);
-
-    $inspect({active})
-
-    import Chooser from './Chooser.svelte';
+    let settingsActive = $state(false);
 </script>
 
 <div class="flex flex-col items-center justify-center m-2">
-    <Settings bind:active={active} />
+    <Settings bind:active={settingsActive} />
     <Header />
-    <BoardComponent {board} onclick={handleCellClick} {selected} {activeDigit} />
+    <BoardComponent {board} onclick={handleCellClick} {selected} {activeDigit} onhidden={() => oncommand({command: 'reset'})} />
     <Control {oncommand} />
 </div>

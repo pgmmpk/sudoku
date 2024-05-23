@@ -11,6 +11,7 @@
         }
     }
 </script>
+
 <div class="flex flex-row w-full mt-4 mb-2 text-gray-500 sized">
     <div class="flex-1 flex flex-col text-lg">
         <label for="#mistakes">Mistakes</label>
