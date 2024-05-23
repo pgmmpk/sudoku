@@ -1,5 +1,4 @@
 <script>
-    import { untrack } from 'svelte';
     const { id, selected, activeDigit, frozen, error, digit, notes, onclick } = $props();
 
     const isSelected = $derived(id == selected);

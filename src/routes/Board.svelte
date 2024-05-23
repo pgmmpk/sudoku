@@ -1,5 +1,4 @@
 <script>
-    import { fade, fly } from 'svelte/transition';
     import MetaCell from './MetaCell.svelte';
 
     const { board, onclick, selected, activeDigit, onhidden } = $props();
@@ -34,7 +33,7 @@
 
 </script>
 
-<div transition:fly={{duration: 3000, y: '-100%'}} class="grid grid-cols-3 border-2 border-gray-800 sizedSquare">
+<div class="grid grid-cols-3 border-2 border-gray-800 sizedSquare">
     {#each blocks as block, i (i)}
         <MetaCell digits={block.map(i => board.cells[i])} {onclick} {selected} {activeDigit} {solved} onhidden={done} />
     {/each}
