@@ -1,5 +1,5 @@
 <script>
-    import { level, stopwatch } from '$lib/settings.svelte.js';
+    import { game, stopwatch } from '$lib/settings.svelte.js';
 
     async function share () {
         const self = {
@@ -24,7 +24,7 @@
     </div>
     <div class="flex-1 flex flex-col text-lg text-center">
         <label for="#difficulty">Difficulty</label>
-        <div id="difficulty" class="font-mono">{level.label}</div>
+        <div id="difficulty" class="font-mono">{game.level}</div>
     </div>
     <div class="flex-1 flex flex-col text-lg text-right">
         <label for="#timer">Elapsed</label>

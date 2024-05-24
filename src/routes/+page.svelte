@@ -156,8 +156,8 @@
 
     function handleCellClick (id) {
         selected = id;
+        navigator.vibrate(20);
         if (settings.vibrate) {
-            navigator.vibrate(10);
         }
     }
 

@@ -191,3 +191,32 @@ export const game = (() => {
         get solution () { return solution; },
     };
 })();
+
+
+export const modal = (() => {
+    let show = $state(false);
+    let type = $state('info');
+    let mess = $state('');
+
+    let done;
+
+    function complete () {
+        show = false;
+        done && done();
+    }
+
+    function info (message, onok) {
+        type = 'info';
+        mess = message;
+        show = true;
+        done = onok;
+    };
+
+    return {
+        info,
+        get show () { return show; },
+        get type () { return type; },
+        get message () { return mess; },
+        complete,
+    }
+})();
