@@ -5,7 +5,7 @@
     import Control from './Control.svelte';
     import Settings from './Settings.svelte';
     import Header from './Header.svelte';
-    import { level, settings, stopwatch, undo as undoStack} from '$lib/settings.svelte.js';
+    import { level, settings, stopwatch, game, undo as undoStack} from '$lib/settings.svelte.js';
     import { bus } from '$lib/bus.js';
 
     function row (index) {
@@ -146,12 +146,9 @@
 
     // const game = '.8291763.1..8.6....6....58...54.9.7.9.4.6.12......5..6.7638.....9..7436.3586.24.7';
     //const game = '68.7....2..9...8..3...9.............7..91.48.....38.75..13.56...5..6.3.......7..9'
-
-    let puzzle = $state(createPuzzle({level: level.value}).puzzle);
     stopwatch.start();
 
-    let board = $state(new Board(puzzle));
-    let solved = $derived(board.isSolved());
+    let board = $state(new Board(game.puzzle));
 
     let selected = $state(4*9 + 4);  // center cell selected
     let activeDigit = $derived(board.cells[selected].digit);
@@ -159,7 +156,7 @@
     function handleCellClick (id) {
         selected = id;
         if (settings.vibrate) {
-            navigator.vibrate(5);
+            navigator.vibrate(10);
         }
     }
 
@@ -174,9 +171,11 @@
     function reset () {
         const levelLabel = level.label;
         const { puzzle, solution } = createPuzzle({level: level.value});
+        game.set({level: levelLabel, puzzle, solution});
         board = new Board(puzzle);
         undoStack.clear();
         stopwatch.reset();
+
         stopwatch.start();
     }
 
@@ -224,6 +223,8 @@
     });
     bus.addEventListener('reset', reset);
     bus.addEventListener('undo', undo);
+
+    undoStack.replay();
 </script>
 
 <div class="flex flex-col items-center justify-center m-2">
