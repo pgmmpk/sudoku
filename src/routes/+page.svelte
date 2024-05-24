@@ -5,7 +5,8 @@
     import Control from './Control.svelte';
     import Settings from './Settings.svelte';
     import Header from './Header.svelte';
-    import { level } from './level.svelte.js';
+    import { level, settings, stopwatch, undo as undoStack} from '$lib/settings.svelte.js';
+    import { bus } from '$lib/bus.js';
 
     function row (index) {
         return Math.floor(index / 9);
@@ -134,7 +135,7 @@
 
         isSolved () {
             for (let i = 0; i < 81; i++) {
-                if (this.cells[i].digit === undefined) {
+                if (this.cells[i].digit === undefined || this.cells[i].error) {
                     return false;
                 }
             }
@@ -145,26 +146,9 @@
 
     // const game = '.8291763.1..8.6....6....58...54.9.7.9.4.6.12......5..6.7638.....9..7436.3586.24.7';
     //const game = '68.7....2..9...8..3...9.............7..91.48.....38.75..13.56...5..6.3.......7..9'
-    
-    function oncommand(cmd) {
-        const { command } = cmd;
-
-        if (command === 'reset') {
-            console.log({reset: level.value})
-            board = new Board(createPuzzle({level: level.value}).puzzle);
-            undoStack.length = 0;
-        } else if (command === 'fill') {
-            push(fill(+cmd.digit));
-        } else if (command === 'toggle-note') {
-            push(toggleNote(+cmd.digit));
-        } else if (command === 'undo') {
-            undo();
-        } else if (command === 'settings') {
-            settingsActive = true;
-        }
-    }
 
     let puzzle = $state(createPuzzle({level: level.value}).puzzle);
+    stopwatch.start();
 
     let board = $state(new Board(puzzle));
     let solved = $derived(board.isSolved());
@@ -174,111 +158,77 @@
 
     function handleCellClick (id) {
         selected = id;
-        navigator.vibrate(10);
-    }
-
-    function noop() {}
-
-    function fill (value) {
-        const index = selected;
-        if (board.cells[selected].frozen) {
-            return {
-                redo: noop,
-                undo: noop,
-            };
-        }
-        const oldDigit = board.cells[index].digit;
-        if (oldDigit === undefined) {
-            return {
-                redo: () => board.fill(index, value),
-                undo: () => board.clear(index),
-            };
-        } else {
-            return {
-                redo: () => board.fill(index, value),
-                undo: () => board.fill(index, oldDigit),
-            };
+        if (settings.vibrate) {
+            navigator.vibrate(5);
         }
     }
 
-    function clear () {
-        const index = selected;
-        if (board.cells[selected].frozen) {
-            return {
-                redo: noop,
-                undo: noop,
-            };
-        }
-        const oldDigit = board.cells[index].digit;
-        if (oldDigit === undefined) {
-            return {
-                redo: noop,
-                undo: noop,
-            };
-        } else {
-            return {
-                redo: () => board.clear(index),
-                undo: () => board.fill(index, oldDigit),
-            };
-        }
-    }
+    bus.addEventListener('board:clear', x => board.clear(x.index));
+    bus.addEventListener('board:fill', x => board.fill(x.index, x.digit));
+    bus.addEventListener('board:toggle-note', x => board.toggleNote(x.index, x.digit));
 
-    function toggleNote (digit) {
-        const index = selected;
-        if (board.cells[selected].frozen || board.cells[index].digit !== undefined) {
-            return {
-                redo: noop,
-                undo: noop,
-            };
-        }
-        return {
-            redo: () => board.toggleNote(index, digit),
-            undo: () => board.toggleNote(index, digit),
-        };
-    }
-
-    const undoStack = [];
     function undo() {
-        if (undoStack.length > 0) {
-            undoStack.pop().undo();
-        }
+        undoStack.undo();
     }
 
-    function push(action) {
-        undoStack.push(action);
-        action.redo();
+    function reset () {
+        const levelLabel = level.label;
+        const { puzzle, solution } = createPuzzle({level: level.value});
+        board = new Board(puzzle);
+        undoStack.clear();
+        stopwatch.reset();
+        stopwatch.start();
     }
 
     Mousetrap.bind ('meta+z', undo);
 
-    Mousetrap.bind ('1', () => push(fill(1)));
-    Mousetrap.bind ('2', () => push(fill(2)));
-    Mousetrap.bind ('3', () => push(fill(3)));
-    Mousetrap.bind ('4', () => push(fill(4)));
-    Mousetrap.bind ('5', () => push(fill(5)));
-    Mousetrap.bind ('6', () => push(fill(6)));
-    Mousetrap.bind ('7', () => push(fill(7)));
-    Mousetrap.bind ('8', () => push(fill(8)));
-    Mousetrap.bind ('9', () => push(fill(9)));
-    Mousetrap.bind ('0', () => push(clear()));
-    Mousetrap.bind ('del', () => push(clear()));
-
-    Mousetrap.bind ('ctrl+1', () => push(toggleNote(1)));
-    Mousetrap.bind ('ctrl+2', () => push(toggleNote(2)));
-    Mousetrap.bind ('ctrl+3', () => push(toggleNote(3)));
-    Mousetrap.bind ('ctrl+4', () => push(toggleNote(4)));
-    Mousetrap.bind ('ctrl+5', () => push(toggleNote(5)));
-    Mousetrap.bind ('ctrl+6', () => push(toggleNote(6)));
-    Mousetrap.bind ('ctrl+7', () => push(toggleNote(7)));
-    Mousetrap.bind ('ctrl+8', () => push(toggleNote(8)));
-    Mousetrap.bind ('ctrl+9', () => push(toggleNote(9)));
-
-    let settingsActive = $state(false);
+    bus.addEventListener('fill', digit => {
+        const index = $state.snapshot(selected);
+        if (board.cells[index].frozen) {
+            return;
+        }
+        const oldDigit = board.cells[index].digit;
+        if (oldDigit === undefined) {
+            undoStack.push({
+                redo: ['board:fill', {index, digit}],
+                undo: ['board:clear', {index}],
+            });
+        } else {
+            undoStack.push({
+                redo: ['board:fill', {index, digit}],
+                undo: ['board:fill', {index, digit: oldDigit}],
+            });
+        }
+    });
+    bus.addEventListener('toggle-note', digit => {
+        const index = $state.snapshot(selected);
+        console.log('toggle', {index, digit})
+        undoStack.push({
+            redo: ['board:toggle-note', {index, digit}],
+            undo: ['board:toggle-note', {index, digit}],
+        });
+    });
+    bus.addEventListener('clear', () => {
+        const index = $state.snapshot(selected);
+        if (board.cells[index].frozen) {
+            return;
+        }
+        const oldDigit = board.cells[index].digit;
+        if (oldDigit === undefined) {
+            return;
+        }
+        undoStack.push({
+            redo: ['board:clear', {index}],
+            undo: ['board:fill', {index, digit: oldDigit}],
+        });
+    });
+    bus.addEventListener('reset', reset);
+    bus.addEventListener('undo', undo);
 </script>
 
 <div class="flex flex-col items-center justify-center m-2">
-    <Settings bind:active={settingsActive} />
+    <Settings />
     <Header />
-    <BoardComponent {board} onclick={handleCellClick} {selected} {activeDigit} onhidden={() => oncommand({command: 'reset'})} />
-    <Control {oncommand} />
+    <BoardComponent {board} onclick={handleCellClick} {selected} {activeDigit} onhidden={reset} />
+    <Control {bus} />
 </div>

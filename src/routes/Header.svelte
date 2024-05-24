@@ -1,5 +1,5 @@
 <script>
-    import { level  } from './level.svelte.js';
+    import { level, stopwatch } from '$lib/settings.svelte.js';
 
     async function share () {
         const self = {
@@ -10,16 +10,27 @@
             await navigator.share(self);
         }
     }
+
 </script>
 
-<div class="flex flex-row w-full mt-4 mb-2 text-gray-500 sized">
+<div class="flex flex-row w-full mt-4 mb-4 text-gray-500 sized">
     <div class="flex-1 flex flex-col text-lg">
         <label for="#mistakes">Mistakes</label>
-        <div id="mistakes">0/3</div>
+        <div id="mistakes" class="font-mono">0/3</div>
+    </div>
+    <div class="flex-1 flex flex-col text-lg">
+        <label for="#stats">Stats</label>
+        <div id="stats" class="font-mono">30/45</div>
     </div>
     <div class="flex-1 flex flex-col text-lg text-center">
         <label for="#difficulty">Difficulty</label>
-        <div id="difficulty">{level.label}</div>
+        <div id="difficulty" class="font-mono">{level.label}</div>
+    </div>
+    <div class="flex-1 flex flex-col text-lg text-right">
+        <label for="#timer">Elapsed</label>
+        <div id="timer" class="font-mono">
+            {#if stopwatch.hours > 0}{stopwatch.hours}:{/if}{stopwatch.minutes.toString().padStart(2, '0')}:{stopwatch.seconds.toString().padStart(2, '0')}
+        </div>
     </div>
     <button class="text-right flex-1" onclick={share}>
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-10 h-10 inline-block">
