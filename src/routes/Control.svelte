@@ -1,11 +1,15 @@
 <script>
     import Mousetrap from 'mousetrap';
+    import { settings } from '$lib/settings.svelte.js';
 
     const { bus } = $props();
 
     let fill = $state(true);
 
     function onclick (digit) {
+        if (settings.vibrate) {
+            navigator.vibrate(5);
+        }
         if (fill == true) {
             bus.dispatchEvent('fill', +digit);
         } else {
