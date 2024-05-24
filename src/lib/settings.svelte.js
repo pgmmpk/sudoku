@@ -1,5 +1,17 @@
 import { bus } from './bus.js';
 
+function save (name, object) {
+    localStorage.setItem(name, JSON.stringify(object, null, 2));
+}
+
+function load (name) {
+    const saved = localStorage.getItem(name);
+    if (saved === null) {
+        return undefined;
+    }
+    return JSON.parse(saved);
+}
+
 export const LEVELS = [
     { label: 'Beginner', value: 1, index: 0 },
     { label: 'Easy',     value: 35, index: 1 },
@@ -14,18 +26,14 @@ export const settings = (() => {
     });
     const name = 'settings';
 
-    const saved = localStorage.getItem(name);
-    if (saved !== null) {
-        state = JSON.parse(saved);
-    }
-
-    function save () {
-        localStorage.setItem(name, JSON.stringify(state, null, 2));
+    const saved = load(name);
+    if (saved !== undefined) {
+        state = saved;
     }
 
     return {
         get vibrate () { return state.vibrate; },
-        set vibrate (what) { state.vibrate = what; save(); },
+        set vibrate (what) { state.vibrate = what; save(name, state); },
     };
 })();
 
@@ -33,9 +41,9 @@ export const level = (() => {
     let state = $state(LEVELS[0]);
     const name = 'level';
 
-    const saved = localStorage.getItem(name);
-    if (saved !== null) {
-        state = LEVELS[JSON.parse(saved).index];
+    const saved = load(name);
+    if (saved !== undefined) {
+        state = LEVELS[saved.index];
     }
 
     return {
@@ -44,55 +52,8 @@ export const level = (() => {
         get index () { return state.index; },
         set index (value) {
             state = LEVELS[value];
-            localStorage.setItem(name, JSON.stringify(state, null, 2));
+            save(name, state);
         },
-    };
-})();
-
-
-export const undo = (() => {
-    const name = 'undo';
-    const stack = [];
-
-    const saved = localStorage.getItem(name);
-    if (saved !== null) {
-        stack.push(...JSON.parse(saved));
-    }
-
-    function save() {
-        localStorage.setItem(name, JSON.stringify(stack, null, 2));
-    }
-
-    function undo () {
-        if (stack.length > 0) {
-            const cmd = stack.pop();
-            bus.dispatchEvent(...cmd.undo);
-            save();
-        }
-    }
-
-    function push (cmd) {
-        stack.push(cmd);
-        bus.dispatchEvent(...cmd.redo);
-        save();
-    }
-
-    function clear () {
-        stack.length = 0;
-        save();
-    }
-
-    function replay () {
-        for (const cmd of stack) {
-            bus.dispatchEvent(...cmd.redo);
-        }
-    }
-
-    return {
-        undo,
-        push,
-        clear,
-        replay,
     };
 })();
 
@@ -136,9 +97,70 @@ export const stopwatch = (() => {
         get minutes () { return minutes; },
         get hours () { return hours; },
         get ticking () { return interval !== null; },
+        get time () {
+            return seconds + minutes * 60 + hours * 60 * 60;
+        },
+        set time (value) {
+            seconds = Math.floor(value) % 60;
+            minutes = Math.floor(value / 60) % 60;
+            hours = Math.floor(value / 60 / 60);
+        },
         start,
         stop,
         reset,
+    };
+})();
+
+export const undo = (() => {
+    const name = 'undo';
+    const stack = [];
+
+    const saved = load(name);
+    if (saved !== undefined) {
+        stack.push(...saved);
+    }
+
+    const savedTime = load('time');
+    if (savedTime) {
+        stopwatch.time = savedTime;
+    }
+
+    function saveme() {
+        save(name, stack);
+        save('time', stopwatch.time);
+    }
+
+    function undo () {
+        if (stack.length > 0) {
+            const cmd = stack.pop();
+            bus.dispatchEvent(...cmd.undo);
+            saveme();
+        }
+    }
+
+    function push (cmd) {
+        stack.push(cmd);
+        bus.dispatchEvent(...cmd.redo);
+        saveme();
+    }
+
+    function clear () {
+        stack.length = 0;
+        stopwatch.reset();
+        saveme();
+    }
+
+    function replay () {
+        for (const cmd of stack) {
+            bus.dispatchEvent(...cmd.redo);
+        }
+    }
+
+    return {
+        undo,
+        push,
+        clear,
+        replay,
     };
 })();
 

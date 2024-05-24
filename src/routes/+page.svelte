@@ -7,6 +7,7 @@
     import Header from './Header.svelte';
     import { level, settings, stopwatch, game, undo as undoStack} from '$lib/settings.svelte.js';
     import { bus } from '$lib/bus.js';
+    import Pause from './Pause.svelte';
 
     function row (index) {
         return Math.floor(index / 9);
@@ -175,7 +176,6 @@
         board = new Board(puzzle);
         undoStack.clear();
         stopwatch.reset();
-
         stopwatch.start();
     }
 
@@ -228,6 +228,7 @@
 </script>
 
 <div class="flex flex-col items-center justify-center m-2">
+    <Pause />
     <Settings />
     <Header />
     <BoardComponent {board} onclick={handleCellClick} {selected} {activeDigit} onhidden={reset} />
