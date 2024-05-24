@@ -53,11 +53,10 @@ export const level = (() => {
 export const undo = (() => {
     const name = 'undo';
     const stack = [];
-    const temp = [];
 
     const saved = localStorage.getItem(name);
     if (saved !== null) {
-        temp.push(...JSON.parse(saved));
+        stack.push(...JSON.parse(saved));
     }
 
     function save() {
@@ -84,10 +83,9 @@ export const undo = (() => {
     }
 
     function replay () {
-        for (const cmd of temp) {
+        for (const cmd of stack) {
             bus.dispatchEvent(...cmd.redo);
         }
-        temp.length = 0;
     }
 
     return {
