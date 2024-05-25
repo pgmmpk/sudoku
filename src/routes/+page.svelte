@@ -269,6 +269,7 @@
             if (!await modal.confirm('Abandoning game?')) {
                 return;
             }
+            await boardComponent.hide({fail: true});
             stats.lost();
         }
         reset();

@@ -34,12 +34,14 @@
     let showing = $state(true);
 
     export const hide = async ({fail = false} = {}) => {
+        if (!showing) return;
         lost = fail;
         showing = false;
         await promiser.wait();
     };
 
     export const show = () => {
+        if (showing) return;
         showing = true;
         return promiser.wait();
     };
