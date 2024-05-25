@@ -1,7 +1,7 @@
 <script>
     import { bus } from '$lib/bus.js';
     import { fly } from 'svelte/transition';
-    import { LEVELS, level, settings, game } from '$lib/settings.svelte.js';
+    import { LEVELS, level, settings, haptic, game } from '$lib/settings.svelte.js';
     import Modal from './Modal.svelte';
     
     let active = $state(false);
@@ -22,7 +22,7 @@
 <div class="flex flex-col w-screen h-screen bg-gray-200 absolute left-0 top-0" transition:fly={{duration: 500, opacity: 1, x: '-100%'}}>
     <div class="flex flex-row justify-right">
         <div class="grow"></div>
-        <button class="flex-none" onclick={close}>
+        <button class="flex-none" onclick={() => haptic(close())}>
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-10 h-10 block m-4">
                 <path stroke-linecap="round" stroke-linejoin="round" d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
             </svg>

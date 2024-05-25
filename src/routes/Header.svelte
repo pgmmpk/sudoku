@@ -1,5 +1,5 @@
 <script>
-    import { game, stopwatch } from '$lib/settings.svelte.js';
+    import { game, stopwatch, mistakes, stats } from '$lib/settings.svelte.js';
 
     async function share () {
         const self = {
@@ -16,11 +16,11 @@
 <div class="flex flex-row w-full mt-4 mb-4 text-gray-500 sized">
     <div class="flex-1 flex flex-col text-lg">
         <label for="#mistakes">Mistakes</label>
-        <div id="mistakes" class="font-mono">0/3</div>
+        <div id="mistakes" class="font-mono">{mistakes.count}/{mistakes.limit}</div>
     </div>
     <div class="flex-1 flex flex-col text-lg">
         <label for="#stats">Stats</label>
-        <div id="stats" class="font-mono">30/45</div>
+        <div id="stats" class="font-mono">{stats.wonCount}/{stats.lostCount}</div>
     </div>
     <div class="flex-1 flex flex-col text-lg text-center">
         <label for="#difficulty">Difficulty</label>

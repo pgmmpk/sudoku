@@ -1,21 +1,23 @@
 <script>
     import { scale } from 'svelte/transition';
+    import { createPromiser } from '$lib/settings.svelte.js';
 
     let show = $state(false);
     let mess = $state('');
 
-    let cb;
+    const infoPromiser = createPromiser();
 
-    export async function info (message) {
+    export function info (message) {
         mess = message;
         show = true;
 
-        return new Promise(resolve => {cb = resolve});
+        return infoPromiser.init();
     }
 
     function done() {
+        mess = '';
         show = false;
-        cb && cb()
+        infoPromiser.resolve();
     }
 </script>
 

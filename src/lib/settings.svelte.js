@@ -13,7 +13,7 @@ function load (name) {
 }
 
 export const LEVELS = [
-    { label: 'Beginner', value: 1, index: 0 },
+    { label: 'Beginner', value: 15, index: 0 },
     { label: 'Easy',     value: 35, index: 1 },
     { label: 'Hard',     value: 40, index: 2 },
     { label: 'Master',   value: 52, index: 3 },
@@ -36,6 +36,12 @@ export const settings = (() => {
         set vibrate (what) { state.vibrate = what; save(name, state); },
     };
 })();
+
+export function haptic () {
+    if (settings.vibrate) {
+        navigator.vibrate(5);
+    }
+}
 
 export const level = (() => {
     let state = $state(LEVELS[0]);
@@ -192,7 +198,6 @@ export const game = (() => {
     };
 })();
 
-
 export const modal = (() => {
     let show = $state(false);
     let type = $state('info');
@@ -219,4 +224,110 @@ export const modal = (() => {
         get message () { return mess; },
         complete,
     }
+})();
+
+export const mistakes = (() => {
+    let count = $state(0);
+    const limit = 3;
+    let freeze = false;
+    const name = 'mistakes';
+
+    const saved = load(name);
+    if (saved !== undefined) {
+        count = saved;
+    }
+
+    function increment () {
+        if (!freeze) {
+            count += 1;
+            save(name, count);
+        }
+    }
+
+    function reset () {
+        count = 0;
+        save(name, count);
+    }
+
+    function withFreeze (f) {
+        freeze = true;
+        try {
+            f();
+        } finally {
+            freeze = false;
+        }
+    }
+
+    return {
+        get count () { return count; },
+        get limit () { return limit; },
+        increment,
+        reset,
+        withFreeze,
+    };
+})();
+
+
+export function createPromiser () {
+    let promise;
+
+    function wait () {
+        if (promise) {
+            promise.reject('another promise is pending');    
+        }
+        promise = Promise.withResolvers();
+        return promise.promise;
+    }
+
+    function resolve (...av) {
+        promise && promise.resolve(...av);
+        promise = undefined;
+    }
+
+    function reject (...av) {
+        promise && promise.reject(...av);
+        promise = undefined;
+    }
+
+    return {
+        wait,
+        resolve,
+        reject,
+    };
+}
+
+export const stats = (() => {
+    const name = 'stats';
+    let lostCount = $state(0);
+    let wonCount = $state(0);
+
+    const saved = load(name);
+    if (saved !== undefined) {
+        ({ lostCount, wonCount } = saved);
+    }
+
+    function lost() {
+        lostCount += 1;
+        save(name, {lostCount, wonCount});
+    }
+
+    function won () {
+        wonCount += 1;
+        save(name, {lostCount, wonCount});
+    }
+
+    function reset () {
+        wonCount = 0;
+        lostCount = 0;
+        save(name, {lostCount, wonCount});
+    }
+
+    return {
+        get lostCount () { return lostCount; },
+        get wonCount () { return wonCount; },
+
+        lost,
+        won,
+        reset,
+    };
 })();

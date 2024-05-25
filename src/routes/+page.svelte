@@ -5,7 +5,7 @@
     import Control from './Control.svelte';
     import Settings from './Settings.svelte';
     import Header from './Header.svelte';
-    import { level, settings, stopwatch, game, undo as undoStack} from '$lib/settings.svelte.js';
+    import { level, haptic, stopwatch, game, undo as undoStack, mistakes, stats } from '$lib/settings.svelte.js';
     import { bus } from '$lib/bus.js';
     import Pause from './Pause.svelte';
 
@@ -143,6 +143,16 @@
 
             return true;
         }
+
+        isError () {
+            for (let i = 0; i < 81; i++) {
+                if (this.cells[i].error) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
     }
 
     // const game = '.8291763.1..8.6....6....58...54.9.7.9.4.6.12......5..6.7638.....9..7436.3586.24.7';
@@ -156,17 +166,37 @@
 
     function handleCellClick (id) {
         selected = id;
-        if (settings.vibrate) {
-            navigator.vibrate(5);
-        }
     }
 
+    let boardComponent;
+
     bus.addEventListener('board:clear', x => board.clear(x.index));
-    bus.addEventListener('board:fill', x => board.fill(x.index, x.digit));
+    bus.addEventListener('board:fill', async x => {
+        const { index, digit } = x;
+        const oldDigit = board.cells[index].digit;
+        const oldError = board.cells[index].error;
+        board.fill(index, digit);
+        if (board.cells[index].error) {
+            // increment error count. Unless we do a noop
+            if (digit !== oldDigit) {
+                mistakes.increment();
+                if (mistakes.count >= mistakes.limit) {
+                    // game over!
+                    await boardComponent.hide({fail: true});
+                    stats.lost();
+                    reset();
+                }
+            }
+        } else if (board.isSolved() ) {
+            await boardComponent.hide();
+            stats.won();
+            reset();
+        }
+    });
     bus.addEventListener('board:toggle-note', x => board.toggleNote(x.index, x.digit));
 
     function undo() {
-        undoStack.undo();
+        mistakes.withFreeze(() => undoStack.undo());
     }
 
     function reset () {
@@ -177,6 +207,8 @@
         undoStack.clear();
         stopwatch.reset();
         stopwatch.start();
+        mistakes.reset();
+        boardComponent.show();
     }
 
     Mousetrap.bind ('meta+z', undo);
@@ -224,13 +256,13 @@
     bus.addEventListener('reset', reset);
     bus.addEventListener('undo', undo);
 
-    undoStack.replay();
+    mistakes.withFreeze(() => undoStack.replay());
 </script>
 
 <div class="flex flex-col items-center justify-center m-2">
     <Pause />
     <Settings />
     <Header />
-    <BoardComponent {board} onclick={handleCellClick} {selected} {activeDigit} onhidden={reset} />
+    <BoardComponent bind:this={boardComponent} {board} onclick={index => haptic(handleCellClick(index))} {selected} {activeDigit} />
     <Control {bus} />
 </div>

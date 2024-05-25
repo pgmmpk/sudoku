@@ -1,7 +1,7 @@
 <script>
     import MetaCell from './MetaCell.svelte';
 
-    const { board, onclick, selected, activeDigit, onhidden } = $props();
+    const { board, onclick, selected, activeDigit } = $props();
 
     const blocks = [
         [0, 1, 2, 9, 10, 11, 18, 19, 20],
@@ -15,27 +15,20 @@
         [60, 61, 62, 69, 70, 71, 78, 79, 80],
     ];
 
-    let solved = $derived(board.isSolved());
+    const metaCells = {};
 
-    $effect(() => {
-        if (!solved) {
-            hideSent = false;
-        }
-    });
-
-    let hideSent = false;
-    function done() {
-        if (!hideSent) {
-            onhidden();
-            hideSent = true;
-        }
+    export function hide(opts) {
+        return Promise.all(Object.values(metaCells).map(m => m.hide(opts)));
     }
 
+    export function show() {
+        return Promise.all(Object.values(metaCells).map(m => m.show()));
+    }
 </script>
 
 <div class="grid grid-cols-3 border-2 border-gray-800 sizedSquare">
-    {#each blocks as block, i (i)}
-        <MetaCell digits={block.map(i => board.cells[i])} {onclick} {selected} {activeDigit} {solved} onhidden={done} />
+    {#each blocks as block, blockId (blockId)}
+        <MetaCell bind:this={metaCells[blockId]} digits={block.map(i => board.cells[i])} {onclick} {selected} {activeDigit} {blockId} />
     {/each}
 </div>
 
