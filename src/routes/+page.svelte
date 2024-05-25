@@ -8,6 +8,7 @@
     import { level, haptic, stopwatch, game, undo as undoStack, mistakes, stats } from '$lib/settings.svelte.js';
     import { bus } from '$lib/bus.js';
     import Pause from './Pause.svelte';
+    import Modal from './Modal.svelte';
 
     function row (index) {
         return Math.floor(index / 9);
@@ -153,6 +154,16 @@
 
             return false;
         }
+
+        isTouched () {
+            for (let i = 0; i < 81; i++) {
+                if (this.cells[i].notes.length > 0 || (this.cells[i].digit !== undefined && !this.cells[i].frozen)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
     }
 
     // const game = '.8291763.1..8.6....6....58...54.9.7.9.4.6.12......5..6.7638.....9..7436.3586.24.7';
@@ -253,14 +264,25 @@
             undo: ['board:fill', {index, digit: oldDigit}],
         });
     });
-    bus.addEventListener('reset', reset);
+    bus.addEventListener('reset', async () => {
+        if (board.isTouched()) {
+            if (!await modal.confirm('Abandoning game?')) {
+                return;
+            }
+            stats.lost();
+        }
+        reset();
+    });
     bus.addEventListener('undo', undo);
 
     mistakes.withFreeze(() => undoStack.replay());
+
+    let modal;
 </script>
 
 <div class="flex flex-col items-center justify-center m-2">
     <Pause />
+    <Modal bind:this={modal} />
     <Settings />
     <Header />
     <BoardComponent bind:this={boardComponent} {board} onclick={index => haptic(handleCellClick(index))} {selected} {activeDigit} />
