@@ -14,12 +14,9 @@
         }
         active = false;
     }
-
-    let modal;
 </script>
 {#if active}
-<Modal bind:this={modal} />
-<div class="flex flex-col w-screen h-screen bg-gray-200 absolute left-0 top-0" transition:fly={{duration: 500, opacity: 1, x: '-100%'}}>
+<div class="flex flex-col w-screen h-screen bg-gray-200 absolute left-0 top-0 z-20" transition:fly={{duration: 500, opacity: 1, x: '-100%'}}>
     <div class="flex flex-row justify-right">
         <div class="grow"></div>
         <button class="flex-none" onclick={() => haptic(close())}>

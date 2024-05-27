@@ -35,6 +35,7 @@
 
     class Cell {
         _digit = $state();
+        _solution = $state();
         _notes = $state([]);
         _error = $state(false);
 
@@ -43,6 +44,13 @@
         }
         set digit (val) {
             this._digit = val;
+        }
+
+        get solution () {
+            return this._solution;
+        }
+        set solution (val) {
+            this._solution = val;
         }
 
         get notes() {
@@ -58,11 +66,12 @@
         set error (val) {
             this._error = val;
         }
-        
-        constructor (id, symbol) {
+
+        constructor (id, symbol, solution) {
             this.id = id;
             this.digit = (symbol === '.') ? undefined : +symbol;
             this.frozen = (symbol !== '.');
+            this.solution = solution;
             this.error = false;
         }
 
@@ -77,11 +86,11 @@
     }
 
     class Board {
-        constructor (boardString) {
+        constructor ({ puzzle, solution }) {
             this.cells = {};
             for (let i = 0; i < 9; i++) {
                 for (let j = 0; j < 9; j++) {
-                    this.cells[i * 9 + j] = new Cell(i*9+j, boardString[i * 9 + j]);
+                    this.cells[i * 9 + j] = new Cell(i*9+j, puzzle[i * 9 + j], solution[i * 9 + j]);
                 }
             }
 
@@ -170,7 +179,7 @@
     //const game = '68.7....2..9...8..3...9.............7..91.48.....38.75..13.56...5..6.3.......7..9'
     stopwatch.start();
 
-    let board = $state(new Board(game.puzzle));
+    let board = $state(new Board(game));
 
     filled.reset(game.puzzle);
 
@@ -178,10 +187,13 @@
     let activeDigit = $derived(board.cells[selected].digit);
 
     function handleCellClick (id) {
+        if (reveal) return;
         selected = id;
     }
 
     let boardComponent;
+
+    let reveal = $state(false);
 
     bus.addEventListener('board:clear', x => {
         const oldDigit = board.cells[x.index].digit;
@@ -202,15 +214,24 @@
                 mistakes.increment();
                 if (mistakes.count >= mistakes.limit) {
                     // game over!
-                    await boardComponent.hide({fail: true});
+                    const response = await modal.open(
+                        'Game lost (too many mistakes)',
+                        ['New game', 'Reveal solution'],
+                    );
+
                     stats.lost();
-                    setTimeout(reset, 0);
+
+                    if (response !== 'New game') {
+                        reveal = true;
+                    } else {
+                        boardComponent && await boardComponent.hide({fail: true});
+                        await reset();
+                    }
                 }
             }
         } else if (board.isSolved() ) {
-            await boardComponent.hide();
             stats.won();
-            setTimeout(reset, 0);
+            await reset();
         }
 
         // track number of filled digits
@@ -218,33 +239,39 @@
             filled.value[digit] += 1;
         } else if (oldDigit !== digit) {
             filled.value[oldDigit] -= 1;
-            filled.vaLUE[digit] += 1;
+            filled.value[digit] += 1;
         }
     });
     bus.addEventListener('board:toggle-note', x => board.toggleNote(x.index, x.digit));
 
     function undo() {
+        if (reveal) {
+            return;
+        }
         mistakes.withFreeze(() => undoStack.undo());
     }
 
-    function reset () {
+    async function reset () {
+        reveal = false;
         const levelLabel = level.label;
-        const { puzzle, solution } = createPuzzle({level: level.value});
-        game.set({level: levelLabel, puzzle, solution});
-        board = new Board(puzzle);
+        boardComponent && await boardComponent.hide();
+        const { puzzle, solution } = createPuzzle({ level: level.value });
+        game.set({ level: levelLabel, puzzle, solution });
+        board = new Board({ puzzle, solution });
         undoStack.clear();
         stopwatch.reset();
         stopwatch.start();
         mistakes.reset();
         boardComponent.show();
-        filled.reset(game.puzzle);
+        filled.reset(puzzle);
+        boardComponent && await boardComponent.show();
     }
 
     Mousetrap.bind ('meta+z', undo);
 
     bus.addEventListener('fill', digit => {
         const index = $state.snapshot(selected);
-        if (board.cells[index].frozen || filled.value[digit] >= 9) {
+        if (reveal || board.cells[index].frozen || filled.value[digit] >= 9) {
             return;
         }
         const oldDigit = board.cells[index].digit;
@@ -261,14 +288,19 @@
         }
     });
     bus.addEventListener('toggle-note', digit => {
+        if (reveal) {
+            return;
+        }
         const index = $state.snapshot(selected);
-        console.log('toggle', {index, digit})
         undoStack.push({
             redo: ['board:toggle-note', {index, digit}],
             undo: ['board:toggle-note', {index, digit}],
         });
     });
     bus.addEventListener('clear', () => {
+        if (reveal) {
+            return;
+        }
         const index = $state.snapshot(selected);
         if (board.cells[index].frozen) {
             return;
@@ -283,18 +315,28 @@
         });
     });
     bus.addEventListener('reset', async () => {
-        if (board.isTouched()) {
-            if (!await modal.confirm('Abandoning game?')) {
+        if (board.isTouched() && !reveal) {
+            const response = await modal.open(
+                'Abandon this game?',
+                ['OK', 'Cancel', 'Reveal solution'],
+            )
+            if (response === 'Cancel') {
                 return;
             }
-            await boardComponent.hide({fail: true});
             stats.lost();
+            if (response == 'OK') {
+                return await reset();
+            }
+            reveal = true;
+        } else {
+            await reset();
         }
-        reset();
     });
     bus.addEventListener('undo', undo);
 
-    mistakes.withFreeze(() => undoStack.replay());
+    setTimeout(() => {
+        mistakes.withFreeze(() => undoStack.replay());
+    }, 0);
 
     let modal;
 </script>
@@ -304,7 +346,7 @@
     <Modal bind:this={modal} />
     <Settings />
     <Header />
-    <BoardComponent bind:this={boardComponent} {board} onclick={index => haptic(handleCellClick(index))} {selected} {activeDigit} />
+    <BoardComponent bind:this={boardComponent} {board} onclick={index => haptic(handleCellClick(index))} {selected} {activeDigit} {reveal} />
     <Control {bus} />
     <div class="grow"></div>
     <div class="text-center text-xs text-gray-500 mt-16 mb-2">

@@ -177,17 +177,17 @@ export const game = (() => {
     let solution = "975643128413728659628915347261574983597836412834291765382169574159487236746352891";
     const saved = localStorage.getItem(name);
     if (saved) {
-        const obj = JSON.parse(saved);
-        level = obj.level;
-        puzzle = obj.puzzle;
-        solution = obj.solution;
+        ({ level, puzzle, solution } = JSON.parse(saved));
+        if (solution === undefined) {  // avoid crash on upgrade
+            level = $state(LEVELS[0].label);
+            puzzle = "..56....8413.28659.2.91534.2615749835978364.28342917..38216957415.48723674.352891";
+            solution = "975643128413728659628915347261574983597836412834291765382169574159487236746352891";
+        }
     }
 
     function set (options) {
-        level = options.level;
-        puzzle = options.puzzle;
-        solution = options.solutions;
-        localStorage.setItem(name, JSON.stringify({level, puzzle, solution}));
+        ( {level, puzzle, solution } = options );
+        localStorage.setItem(name, JSON.stringify({ level, puzzle, solution }));
     }
 
     return {

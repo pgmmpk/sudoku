@@ -1,7 +1,7 @@
 <script>
     import MetaCell from './MetaCell.svelte';
 
-    const { board, onclick, selected, activeDigit } = $props();
+    const { board, onclick, selected, activeDigit, reveal } = $props();
 
     const blocks = [
         [0, 1, 2, 9, 10, 11, 18, 19, 20],
@@ -28,7 +28,7 @@
 
 <div class="grid grid-cols-3 border-2 border-gray-800 sizedSquare">
     {#each blocks as block, blockId (blockId)}
-        <MetaCell bind:this={metaCells[blockId]} digits={block.map(i => board.cells[i])} {onclick} {selected} {activeDigit} {blockId} />
+        <MetaCell bind:this={metaCells[blockId]} digits={block.map(i => board.cells[i])} {onclick} {selected} {activeDigit} {reveal} />
     {/each}
 </div>
 
