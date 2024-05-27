@@ -204,13 +204,13 @@
                     // game over!
                     await boardComponent.hide({fail: true});
                     stats.lost();
-                    reset();
+                    setTimeout(reset, 0);
                 }
             }
         } else if (board.isSolved() ) {
             await boardComponent.hide();
             stats.won();
-            reset();
+            setTimeout(reset, 0);
         }
 
         // track number of filled digits
