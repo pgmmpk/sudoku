@@ -35,10 +35,6 @@ jobs:
       - name: Setup Pages
         id: pages
         uses: actions/configure-pages@v4
-      - name: Echo env
-        run: "echo $GITHUB_RUN_NUMBER"
-      - name: Echo env 2
-        run: BUILD_NUMBER=$GITHUB_RUN_NUMBER echo $BUILD_NUMBER
       - name: Build with NodeJS
         # Outputs to the './build' directory by default
         run: "npm i --force && BUILD_NUMBER=$GITHUB_RUN_NUMBER npm run build"
