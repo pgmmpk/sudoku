@@ -15,7 +15,7 @@ function load (name) {
 export const LEVELS = [
     { label: 'Beginner', value: 20, index: 0 },
     { label: 'Easy',     value: 35, index: 1 },
-    { label: 'Hard',     value: 40, index: 2 },
+    { label: 'Hard',     value: 43, index: 2 },
     { label: 'Master',   value: 52, index: 3 },
     { label: 'Insane',   value: 64, index: 4 },
 ];
