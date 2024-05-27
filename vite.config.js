@@ -6,5 +6,7 @@ export default defineConfig({
 	test: {
 		include: ['src/**/*.{test,spec}.{js,ts}']
 	},
-	
+	define: {
+		'import.meta.env.ABC': JSON.stringify(process.env.ABC),
+	},
 });

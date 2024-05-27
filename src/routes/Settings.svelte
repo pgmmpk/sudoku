@@ -43,5 +43,7 @@
             <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-700">Vibrate</span>
         </label>
     </div>
+    <div class="grow"></div>
+    <div class="text-sm text-center text-gray-500 mb-2">build #{import.meta.env.BUILD_NUMBER ?? 'dev'}</div>
 </div>
 {/if}
