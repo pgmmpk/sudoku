@@ -5,8 +5,7 @@
     import Control from './Control.svelte';
     import Settings from './Settings.svelte';
     import Header from './Header.svelte';
-    import { level, haptic, stopwatch, game, undo as undoStack, mistakes, stats , filled } from '$lib/settings.svelte.js';
-    import { bus } from '$lib/bus.js';
+    import { level, haptic, stopwatch, game, undo, mistakes, stats , filled } from '$lib/settings.svelte.js';
     import Pause from './Pause.svelte';
     import Modal from './Modal.svelte';
 
@@ -195,7 +194,7 @@
 
     let reveal = $state(false);
 
-    bus.addEventListener('board:clear', x => {
+    undo.addEventListener('board:clear', x => {
         const oldDigit = board.cells[x.index].digit;
         board.clear(x.index);
 
@@ -204,7 +203,7 @@
             filled.value[oldDigit] -= 1;
         }
     });
-    bus.addEventListener('board:fill', async x => {
+    undo.addEventListener('board:fill', async x => {
         const { index, digit } = x;
         const oldDigit = board.cells[index].digit;
         board.fill(index, digit);
@@ -214,7 +213,7 @@
                 mistakes.increment();
                 if (mistakes.count >= mistakes.limit) {
                     // game over!
-                    const response = await modal.open(
+                    const response = await modal.show(
                         'Game lost (too many mistakes)',
                         ['New game', 'Reveal solution'],
                     );
@@ -224,7 +223,6 @@
                     if (response !== 'New game') {
                         reveal = true;
                     } else {
-                        boardComponent && await boardComponent.hide({fail: true});
                         await reset();
                     }
                 }
@@ -242,13 +240,11 @@
             filled.value[digit] += 1;
         }
     });
-    bus.addEventListener('board:toggle-note', x => board.toggleNote(x.index, x.digit));
+    undo.addEventListener('board:toggle-note', x => board.toggleNote(x.index, x.digit));
 
-    function undo() {
-        if (reveal) {
-            return;
-        }
-        mistakes.withFreeze(() => undoStack.undo());
+    function onUndo() {
+        if (reveal) return;
+        mistakes.withFreeze(() => undo.undo());
     }
 
     async function reset () {
@@ -258,46 +254,47 @@
         const { puzzle, solution } = createPuzzle({ level: level.value });
         game.set({ level: levelLabel, puzzle, solution });
         board = new Board({ puzzle, solution });
-        undoStack.clear();
+        undo.clear();
         stopwatch.reset();
         stopwatch.start();
         mistakes.reset();
-        boardComponent.show();
         filled.reset(puzzle);
         boardComponent && await boardComponent.show();
     }
 
-    Mousetrap.bind ('meta+z', undo);
+    Mousetrap.bind ('meta+z', onUndo);
 
-    bus.addEventListener('fill', digit => {
+    function onFill (digit) {
         const index = $state.snapshot(selected);
         if (reveal || board.cells[index].frozen || filled.value[digit] >= 9) {
             return;
         }
         const oldDigit = board.cells[index].digit;
         if (oldDigit === undefined) {
-            undoStack.push({
+            undo.push({
                 redo: ['board:fill', {index, digit}],
                 undo: ['board:clear', {index}],
             });
         } else {
-            undoStack.push({
+            undo.push({
                 redo: ['board:fill', {index, digit}],
                 undo: ['board:fill', {index, digit: oldDigit}],
             });
         }
-    });
-    bus.addEventListener('toggle-note', digit => {
+    }
+
+    function onToggleNote (digit) {
         if (reveal) {
             return;
         }
         const index = $state.snapshot(selected);
-        undoStack.push({
+        undo.push({
             redo: ['board:toggle-note', {index, digit}],
             undo: ['board:toggle-note', {index, digit}],
         });
-    });
-    bus.addEventListener('clear', () => {
+    }
+
+    function onClear () {
         if (reveal) {
             return;
         }
@@ -309,45 +306,56 @@
         if (oldDigit === undefined) {
             return;
         }
-        undoStack.push({
+        undo.push({
             redo: ['board:clear', {index}],
             undo: ['board:fill', {index, digit: oldDigit}],
         });
-    });
-    bus.addEventListener('reset', async () => {
-        if (board.isTouched() && !reveal) {
-            const response = await modal.open(
-                'Abandon this game?',
-                ['OK', 'Cancel', 'Reveal solution'],
-            )
-            if (response === 'Cancel') {
-                return;
+    }
+
+    let inOnReset = 0;  // prevent recursion when user click fast
+    async function onReset () {
+        inOnReset += 1
+        try {
+            if (inOnReset !== 1) return;
+
+            if (board.isTouched() && !reveal) {
+                const response = await modal.show(
+                    'Abandon this game?',
+                    ['OK', 'Cancel', 'Reveal solution'],
+                )
+                if (response === 'Cancel') {
+                    return;
+                }
+                stats.lost();
+                if (response == 'OK') {
+                    await reset();
+                } else {
+                    reveal = true;
+                }
+            } else {
+                await reset();
             }
-            stats.lost();
-            if (response == 'OK') {
-                return await reset();
-            }
-            reveal = true;
-        } else {
-            await reset();
+        } finally {
+            inOnReset -= 1;
         }
-    });
-    bus.addEventListener('undo', undo);
+    }
 
     setTimeout(() => {
-        mistakes.withFreeze(() => undoStack.replay());
+        mistakes.withFreeze(() => undo.replay());
     }, 0);
 
     let modal;
+    let pause;
+    let settings;
 </script>
 
 <div class="flex flex-col items-center justify-center mx-2 h-screen">
-    <Pause />
+    <Pause bind:this={pause}/>
     <Modal bind:this={modal} />
-    <Settings />
+    <Settings bind:this={settings} />
     <Header />
     <BoardComponent bind:this={boardComponent} {board} onclick={index => haptic(handleCellClick(index))} {selected} {activeDigit} {reveal} />
-    <Control {bus} />
+    <Control {onFill} {onClear} onPause={() => pause.show()} {onReset} {onUndo} {onToggleNote} onShowSettings={() => settings.show()} />
     <div class="grow"></div>
     <div class="text-center text-xs text-gray-500 mt-16 mb-2">
         <a href="https://github.com/pgmmpk/sudoku">

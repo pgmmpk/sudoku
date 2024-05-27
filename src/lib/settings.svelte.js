@@ -1,5 +1,3 @@
-import { bus } from './bus.js';
-
 function save (name, object) {
     localStorage.setItem(name, JSON.stringify(object, null, 2));
 }
@@ -39,7 +37,7 @@ export const settings = (() => {
 
 export function haptic () {
     if (settings.vibrate) {
-       navigator.vibrate &&  navigator.vibrate(5);
+        navigator.vibrate &&  navigator.vibrate(5);
     }
 }
 
@@ -118,6 +116,8 @@ export const stopwatch = (() => {
 })();
 
 export const undo = (() => {
+    const out = new EventTarget();
+
     const name = 'undo';
     const stack = [];
 
@@ -139,14 +139,14 @@ export const undo = (() => {
     function undo () {
         if (stack.length > 0) {
             const cmd = stack.pop();
-            bus.dispatchEvent(...cmd.undo);
+            dispatchEvent(...cmd.undo);
             saveme();
         }
     }
 
     function push (cmd) {
         stack.push(cmd);
-        bus.dispatchEvent(...cmd.redo);
+        dispatchEvent(...cmd.redo);
         saveme();
     }
 
@@ -158,8 +158,18 @@ export const undo = (() => {
 
     function replay () {
         for (const cmd of stack) {
-            bus.dispatchEvent(...cmd.redo);
+            dispatchEvent(...cmd.redo);
         }
+    }
+
+    function addEventListener (type, handler) {
+        const handle = e => handler(e.detail);
+        out.addEventListener (type, handle);
+        return () => out.removeEventListener(type, handle);
+    }
+
+    function dispatchEvent (type, detail) {
+        out.dispatchEvent(new CustomEvent(type, { detail }));
     }
 
     return {
@@ -167,6 +177,8 @@ export const undo = (() => {
         push,
         clear,
         replay,
+        addEventListener,
+        removeEventListener,
     };
 })();
 
@@ -273,7 +285,8 @@ export function createPromiser () {
 
     function wait () {
         if (promise) {
-            promise.reject('another promise is pending');    
+            return Promise.all([promise]);
+            /// promise.reject('another promise is pending');    
         }
         promise = Promise.withResolvers();
         return promise.promise;
