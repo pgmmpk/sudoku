@@ -10,7 +10,7 @@
         if (fill == true) {
             onFill(digit);
         } else {
-            onTogleNote(+digit);
+            onTogleNote(digit);
         }
     }
 
