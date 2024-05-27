@@ -31,7 +31,7 @@
 </script>
 
 {#snippet digitSnippet(solution)}
-    <div in:spiral={{duration: 4000, delay: 200}} class="w-0 h-0 absolute cell font-light text-green-700 opacity-40 flex justify-center items-center">{solution}</div>
+    <div in:spiral={{duration: 4000, delay: 200}} class="w-0 h-0 absolute cell font-light text-green-700 opacity-60 flex justify-center items-center">{solution}</div>
 {/snippet}
 
 <div class="border border-gray-400 text-gray-700 font-light items-center justify-center flex relative"
