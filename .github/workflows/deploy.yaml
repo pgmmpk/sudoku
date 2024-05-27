@@ -11,7 +11,7 @@ on:
 
 
 env:
-  BUILD_NUMBER: $env.GITHUB_RUN_NUMBER
+  BUILD_NUMBER: ${{env.GITHUB_RUN_NUMBER}}
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:

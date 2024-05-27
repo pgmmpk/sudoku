@@ -299,7 +299,7 @@
     let modal;
 </script>
 
-<div class="flex flex-col items-center justify-center m-2">
+<div class="flex flex-col items-center justify-center m-2 h-full">
     <Pause />
     <Modal bind:this={modal} />
     <Settings />
