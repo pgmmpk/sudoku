@@ -38,7 +38,7 @@ jobs:
       - name: Echo env
         run: echo ${{env.GITHUB_RUN_NUMBER}}
       - name: Echo env 2
-        run: BUILD_NUMBER=${{env.GITHUB_RUN_NUMBER}} "echo $BUILD_NUMBER"
+        run: BUILD_NUMBER=$GITHUB_RUN_NUMBER echo $BUILD_NUMBER
       - name: Build with NodeJS
         # Outputs to the './build' directory by default
         run: npm i --force && BUILD_NUMBER=${{env.GITHUB_RUN_NUMBER}} npm run build
