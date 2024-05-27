@@ -179,7 +179,7 @@ export const game = (() => {
     if (saved) {
         ({ level, puzzle, solution } = JSON.parse(saved));
         if (solution === undefined) {  // avoid crash on upgrade
-            level = $state(LEVELS[0].label);
+            level = LEVELS[0].label;
             puzzle = "..56....8413.28659.2.91534.2615749835978364.28342917..38216957415.48723674.352891";
             solution = "975643128413728659628915347261574983597836412834291765382169574159487236746352891";
         }
