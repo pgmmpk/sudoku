@@ -1,6 +1,6 @@
 <script>
     import Mousetrap from 'mousetrap';
-    import { haptic } from '$lib/settings.svelte.js';
+    import { haptic, filled } from '$lib/settings.svelte.js';
 
     const { bus } = $props();
 
@@ -67,7 +67,7 @@
     </div>
     <div class="mt-4 grid grid-cols-9 items-center justify-center sized">
         {#each '123456789' as digit}
-        <button class="control hover:bg-gray-200" class:font-thin={!fill} class:italic={!fill} onclick={() => haptic(onclick(digit))}>{digit}</button>
+        <button disabled={filled.value[digit] >= 9} class="control hover:bg-gray-200 disabled:text-gray-400" class:font-thin={!fill} class:italic={!fill} onclick={() => haptic(onclick(digit))}>{digit}</button>
         {/each}
     </div>
 </div>

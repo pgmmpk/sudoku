@@ -5,7 +5,7 @@
     import Control from './Control.svelte';
     import Settings from './Settings.svelte';
     import Header from './Header.svelte';
-    import { level, haptic, stopwatch, game, undo as undoStack, mistakes, stats } from '$lib/settings.svelte.js';
+    import { level, haptic, stopwatch, game, undo as undoStack, mistakes, stats , filled } from '$lib/settings.svelte.js';
     import { bus } from '$lib/bus.js';
     import Pause from './Pause.svelte';
     import Modal from './Modal.svelte';
@@ -172,6 +172,8 @@
 
     let board = $state(new Board(game.puzzle));
 
+    filled.reset(game.puzzle);
+
     let selected = $state(4*9 + 4);  // center cell selected
     let activeDigit = $derived(board.cells[selected].digit);
 
@@ -181,11 +183,18 @@
 
     let boardComponent;
 
-    bus.addEventListener('board:clear', x => board.clear(x.index));
+    bus.addEventListener('board:clear', x => {
+        const oldDigit = board.cells[x.index].digit;
+        board.clear(x.index);
+
+        // track numbe rof filled digits
+        if (oldDigit !== undefined) {
+            filled.value[oldDigit] -= 1;
+        }
+    });
     bus.addEventListener('board:fill', async x => {
         const { index, digit } = x;
         const oldDigit = board.cells[index].digit;
-        const oldError = board.cells[index].error;
         board.fill(index, digit);
         if (board.cells[index].error) {
             // increment error count. Unless we do a noop
@@ -202,6 +211,14 @@
             await boardComponent.hide();
             stats.won();
             reset();
+        }
+
+        // track number of filled digits
+        if (oldDigit === undefined) {
+            filled.value[digit] += 1;
+        } else if (oldDigit !== digit) {
+            filled.value[oldDigit] -= 1;
+            filled.vaLUE[digit] += 1;
         }
     });
     bus.addEventListener('board:toggle-note', x => board.toggleNote(x.index, x.digit));
@@ -220,13 +237,14 @@
         stopwatch.start();
         mistakes.reset();
         boardComponent.show();
+        filled.reset(game.puzzle);
     }
 
     Mousetrap.bind ('meta+z', undo);
 
     bus.addEventListener('fill', digit => {
         const index = $state.snapshot(selected);
-        if (board.cells[index].frozen) {
+        if (board.cells[index].frozen || filled.value[digit] >= 9) {
             return;
         }
         const oldDigit = board.cells[index].digit;

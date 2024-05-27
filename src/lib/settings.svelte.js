@@ -13,7 +13,7 @@ function load (name) {
 }
 
 export const LEVELS = [
-    { label: 'Beginner', value: 15, index: 0 },
+    { label: 'Beginner', value: 1, index: 0 },
     { label: 'Easy',     value: 35, index: 1 },
     { label: 'Hard',     value: 40, index: 2 },
     { label: 'Master',   value: 52, index: 3 },
@@ -39,7 +39,7 @@ export const settings = (() => {
 
 export function haptic () {
     if (settings.vibrate) {
-        navigator.vibrate(5);
+       navigator.vibrate &&  navigator.vibrate(5);
     }
 }
 
@@ -328,6 +328,25 @@ export const stats = (() => {
 
         lost,
         won,
+        reset,
+    };
+})();
+
+export const filled = (() => {
+    const value = $state({});
+
+    function reset(puzzle) {
+        for (const digit of '123456789') {
+            value[digit] = 0;
+        }
+        for (const digit of puzzle) {
+            if (digit === '.') continue;
+            value[digit] += 1;
+        }
+    }
+
+    return {
+        get value () { return value; },
         reset,
     };
 })();
