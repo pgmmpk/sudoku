@@ -7,6 +7,6 @@ export default defineConfig({
 		include: ['src/**/*.{test,spec}.{js,ts}']
 	},
 	define: {
-		'import.meta.env.ABC': JSON.stringify(process.env.ABC),
+		'import.meta.env.BUILD_NUMBER': JSON.stringify(process.env.BUILD_NUMBER),
 	},
 });
