@@ -5,7 +5,7 @@
     import Control from './Control.svelte';
     import Settings from './Settings.svelte';
     import Header from './Header.svelte';
-    import { level, haptic, stopwatch, game, undo, mistakes, stats , filled } from '$lib/settings.svelte.js';
+    import { level, haptic, stopwatch, game, undo, mistakes, stats } from '$lib/settings.svelte.js';
     import Pause from './Pause.svelte';
     import Modal from './Modal.svelte';
 
@@ -180,7 +180,15 @@
 
     let board = $state(new Board(game));
 
-    filled.reset(game.puzzle);
+    let fillCount = $derived.by(() => {
+        const out = {};
+        for (let i = 0; i < 81; i++) {
+            if (board.cells[i].digit !== undefined) {
+                out[board.cells[i].digit] = 1 + (out[board.cells[i].digit] || 0);
+            }
+        }
+        return out;
+    });
 
     let selected = $state(4*9 + 4);  // center cell selected
     let activeDigit = $derived(board.cells[selected].digit);
@@ -197,11 +205,6 @@
     undo.addEventListener('board:clear', x => {
         const oldDigit = board.cells[x.index].digit;
         board.clear(x.index);
-
-        // track numbe rof filled digits
-        if (oldDigit !== undefined) {
-            filled.value[oldDigit] -= 1;
-        }
     });
     undo.addEventListener('board:fill', async x => {
         const { index, digit } = x;
@@ -231,14 +234,6 @@
             stats.won();
             await reset();
         }
-
-        // track number of filled digits
-        if (oldDigit === undefined) {
-            filled.value[digit] += 1;
-        } else if (oldDigit !== digit) {
-            filled.value[oldDigit] -= 1;
-            filled.value[digit] += 1;
-        }
     });
     undo.addEventListener('board:toggle-note', x => board.toggleNote(x.index, x.digit));
 
@@ -258,7 +253,6 @@
         stopwatch.reset();
         stopwatch.start();
         mistakes.reset();
-        filled.reset(puzzle);
         boardComponent && await boardComponent.show();
     }
 
@@ -266,7 +260,7 @@
 
     function onFill (digit) {
         const index = $state.snapshot(selected);
-        if (reveal || board.cells[index].frozen || filled.value[digit] >= 9) {
+        if (reveal || board.cells[index].frozen || fillCount[digit] >= 9) {
             return;
         }
         const oldDigit = board.cells[index].digit;
@@ -355,7 +349,7 @@
     <Settings bind:this={settings} />
     <Header />
     <BoardComponent bind:this={boardComponent} {board} onclick={index => haptic(handleCellClick(index))} {selected} {activeDigit} {reveal} />
-    <Control {onFill} {onClear} onPause={() => pause.show()} {onReset} {onUndo} {onToggleNote} onShowSettings={() => settings.show()} />
+    <Control {fillCount} {onFill} {onClear} onPause={() => pause.show()} {onReset} {onUndo} {onToggleNote} onShowSettings={() => settings.show()} />
     <div class="grow"></div>
     <div class="text-center text-xs text-gray-500 mt-16 mb-2">
         <a href="https://github.com/pgmmpk/sudoku">

@@ -345,7 +345,7 @@ export const stats = (() => {
     };
 })();
 
-export const filled = (() => {
+const filled = (() => {
     const value = $state({});
 
     function reset(puzzle) {

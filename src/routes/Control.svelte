@@ -1,8 +1,8 @@
 <script>
     import Mousetrap from 'mousetrap';
-    import { haptic, filled } from '$lib/settings.svelte.js';
+    import { haptic } from '$lib/settings.svelte.js';
 
-    const { onFill, onToggleNote, onClear, onReset, onUndo, onPause, onShowSettings } = $props();
+    const { fillCount, onFill, onToggleNote, onClear, onReset, onUndo, onPause, onShowSettings } = $props();
 
     let fill = $state(true);
 
@@ -68,7 +68,7 @@
     </div>
     <div class="mt-4 grid grid-cols-9 items-center justify-center sized">
         {#each '123456789' as digit}
-        <button disabled={filled.value[digit] >= 9} class="control hover:bg-gray-200 disabled:text-gray-400" class:font-thin={!fill} class:italic={!fill} onclick={() => haptic(onclick(+digit))}>{digit}</button>
+        <button disabled={fillCount[+digit] >= 9} class="control hover:bg-gray-200 disabled:text-gray-400" class:font-thin={!fill} class:italic={!fill} onclick={() => haptic(onclick(+digit))}>{digit}</button>
         {/each}
     </div>
 </div>
