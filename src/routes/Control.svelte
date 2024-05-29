@@ -10,7 +10,7 @@
         if (fill == true) {
             onFill(digit);
         } else {
-            onTogleNote(digit);
+            onToggleNote(digit);
         }
     }
 
@@ -68,7 +68,7 @@
     </div>
     <div class="mt-4 grid grid-cols-9 items-center justify-center sized">
         {#each '123456789' as digit}
-        <button disabled={fillCount[+digit] >= 9} class="control hover:bg-gray-200 disabled:text-gray-400" class:font-thin={!fill} class:italic={!fill} onclick={() => haptic(onclick(+digit))}>{digit}</button>
+        <button disabled={fillCount[+digit] >= 9 && fill} class="control hover:bg-gray-200 disabled:text-gray-400" class:font-thin={!fill} class:italic={!fill} onclick={() => haptic(onclick(+digit))}>{digit}</button>
         {/each}
     </div>
 </div>
