@@ -37,7 +37,7 @@
     Mousetrap.bind ('del', () => onClear());
 
 </script>
-<div class="mt-4 flex flex-col items-center justify-center">
+<div class="mt-4 flex flex-col items-center justify-center touch-none">
     <div class="mt-4 grid grid-cols-5 items-center justify-center sized">
         <button onclick={() => haptic(onReset())} aria-label="reset">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-10 h-10 inline-block">

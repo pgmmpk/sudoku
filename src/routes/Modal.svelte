@@ -26,7 +26,7 @@
     <div class="w-2/3 bg-white border-1 border-gray-500 rounded text-center m-4 my-8">
         <div class="my-4">{mess}</div>
         {#each butt as text}
-        <button class="m-2 p-2 border rounded" onclick={() => hide(text)}>{text}</button>
+        <button class="m-2 p-2 border rounded touch-none" onclick={() => hide(text)}>{text}</button>
         {/each}
     </div>
 </div>
