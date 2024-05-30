@@ -46,13 +46,13 @@
         return promiser.wait();
     };
 
-    const { digits, onclick, selected, activeDigit, reveal } = $props();
+    const { digits, onselected, selected, activeDigit, reveal } = $props();
 </script>
 
 {#if showing}
 <div transition:spin={{duration:1000, tiles: 1}} onoutroend={() => promiser.resolve()} onintroend={() => promiser.resolve()} class="grid grid-cols-3 border-2 border-gray-800">
     {#each digits as cell}
-        <Cell {...cell} {onclick} {selected} {activeDigit} {reveal} />
+        <Cell {...cell} {onselected} {selected} {activeDigit} {reveal} />
     {/each}
 </div>
 {/if}

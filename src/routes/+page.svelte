@@ -193,7 +193,7 @@
     let selected = $state(4*9 + 4);  // center cell selected
     let activeDigit = $derived(board.cells[selected].digit);
 
-    function handleCellClick (id) {
+    function handleCellSelected (id) {
         if (reveal) return;
         selected = id;
     }
@@ -348,7 +348,7 @@
     <Modal bind:this={modal} />
     <Settings bind:this={settings} />
     <Header />
-    <BoardComponent bind:this={boardComponent} {board} onclick={index => haptic(handleCellClick(index))} {selected} {activeDigit} {reveal} />
+    <BoardComponent bind:this={boardComponent} {board} onselected={index => haptic(handleCellSelected(index))} {selected} {activeDigit} {reveal} />
     <Control {fillCount} {onFill} {onClear} onPause={() => pause.show()} {onReset} {onUndo} {onToggleNote} onShowSettings={() => settings.show()} />
     <div class="grow"></div>
     <div class="text-center text-xs text-gray-500 mt-16 mb-2">
