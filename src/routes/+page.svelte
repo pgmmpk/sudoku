@@ -194,7 +194,6 @@
     let activeDigit = $derived(board.cells[selected].digit);
 
     function handleCellSelected (id) {
-        if (reveal) return;
         selected = id;
     }
 
@@ -240,7 +239,6 @@
     undo.addEventListener('board:toggle-note', x => board.toggleNote(x.index, x.digit));
 
     function onUndo() {
-        // if (reveal) return;
         mistakes.withFreeze(() => undo.undo());
     }
 
