@@ -210,35 +210,37 @@
         const { index, digit } = x;
         const oldDigit = board.cells[index].digit;
         board.fill(index, digit);
-        if (board.cells[index].error) {
-            // increment error count. Unless we do a noop
-            if (digit !== oldDigit) {
-                mistakes.increment();
-                if (mistakes.count >= mistakes.limit) {
-                    // game over!
-                    const response = await modal.show(
-                        'Game lost (too many mistakes)',
-                        ['New game', 'Reveal solution'],
-                    );
+        if (!reveal) {
+            if (board.cells[index].error) {
+                // increment error count. Unless we do a noop
+                if (digit !== oldDigit) {
+                    mistakes.increment();
+                    if (mistakes.count >= mistakes.limit) {
+                        // game over!
+                        const response = await modal.show(
+                            'Game lost (too many mistakes)',
+                            ['New game', 'Reveal solution'],
+                        );
 
-                    stats.lost();
+                        stats.lost();
 
-                    if (response !== 'New game') {
-                        reveal = true;
-                    } else {
-                        await reset();
+                        if (response !== 'New game') {
+                            reveal = true;
+                        } else {
+                            await reset();
+                        }
                     }
                 }
+            } else if (board.isSolved() ) {
+                stats.won();
+                await reset();
             }
-        } else if (board.isSolved() ) {
-            stats.won();
-            await reset();
         }
     });
     undo.addEventListener('board:toggle-note', x => board.toggleNote(x.index, x.digit));
 
     function onUndo() {
-        if (reveal) return;
+        // if (reveal) return;
         mistakes.withFreeze(() => undo.undo());
     }
 
