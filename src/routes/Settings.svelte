@@ -1,19 +1,22 @@
 <script>
     import { fly } from 'svelte/transition';
-    import { LEVELS, level, settings, haptic, game } from '$lib/settings.svelte.js';
+    import { LEVELS, level, settings, haptic, stopwatch } from '$lib/settings.svelte.js';
     import { superclick } from '$lib/actions.js';
     
     let active = $state(false);
     
     export function show () {
         active = true;
+        stopwatch.stop();
     }
 
     export function hide () {
-        if (game.level !== level.label) {
-            // await modal.info('Change to game difficulty level will be applied to the next game');
-        }
         active = false;
+        stopwatch.start();
+    }
+
+    export function isShowing () {
+        return active;
     }
 </script>
 {#if active}

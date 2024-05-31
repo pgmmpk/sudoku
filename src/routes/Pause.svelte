@@ -14,6 +14,10 @@
         active = false;
         stopwatch.start();
     }
+
+    export function isShowing () {
+        return active;
+    }
 </script>
 {#if active}
 <div class="flex flex-col w-screen h-screen bg-gray-200 absolute left-0 top-0 items-center justify-center z-20" transition:fly={{duration: 500, opacity: 1, x: '100%'}}>

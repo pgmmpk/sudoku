@@ -341,7 +341,21 @@
     let modal;
     let pause;
     let settings;
+
+    function suspendTimer () {
+        if (stopwatch.ticking) {
+            stopwatch.stop();
+        }
+    }
+
+    function resumeTimer () {
+        if (!pause.isShowing() && !settings.isShowing() && !stopwatch.ticking) {
+            stopwatch.start();
+        }
+    }
 </script>
+
+<svelte:window onpageshow={resumeTimer} onfocus={resumeTimer} onpagehide={suspendTimer} onblur={suspendTimer} />
 
 <div class="flex flex-col items-center justify-center mx-2 h-screen">
     <Pause bind:this={pause}/>
