@@ -35,7 +35,7 @@
     <div in:spiral={{duration: 4000, delay: 200}} class="w-0 h-0 absolute cell font-light text-green-700 opacity-60 flex justify-center items-center">{solution}</div>
 {/snippet}
 
-<div class="border border-gray-400 text-gray-700 font-light items-center justify-center flex relative touch-none"
+<div class="select-none font-light border border-gray-400 text-gray-700 items-center justify-center flex relative touch-none"
     class:bg-blue-300={isSelected} class:bg-blue-50={isSelectedCol || isSelectedRow || isSelectedBlock} class:bg-blue-200={isActive}
     use:superclick={() => onselected && onselected(id)} role="presentation"
 >
@@ -43,11 +43,14 @@
 {#if reveal && solution != digit}
     {@render digitSnippet(solution)}
 {/if}
-<div class="font-light aspect-square">
-    <div class="cell font-light flex items-center justify-center w-0 h-0" class:text-red-700={(!reveal && error) || (reveal && digit != solution)} class:text-blue-700={!frozen && !error}>{digit}</div>
+<div class="aspect-square">
+    <div class="cell flex items-center justify-center w-0 h-0"
+        class:text-red-700={(!reveal && error) || (reveal && digit != solution)}
+        class:font-bold={(!reveal && error) || (reveal && digit != solution)}
+        class:text-blue-700={!frozen && !error}>{digit}</div>
 </div>
 {:else}    
-<div class="font-light aspect-square"></div>
+<div class="aspect-square"></div>
 {#if reveal}
     {@render digitSnippet(solution)}
 {/if}
