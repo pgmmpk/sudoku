@@ -192,6 +192,10 @@
 
     let selected = $state(4*9 + 4);  // center cell selected
     let activeDigit = $derived(board.cells[selected].digit);
+    let activeNotes = $derived.by(() => {
+        if (board.cells[selected].digit) return [];
+        return board.cells[selected].notes;
+    });
 
     function handleCellSelected (id) {
         selected = id;
@@ -363,7 +367,7 @@
     <Settings bind:this={settings} />
     <Header />
     <BoardComponent bind:this={boardComponent} {board} onselected={index => haptic(handleCellSelected(index))} {selected} {activeDigit} {reveal} />
-    <Control {fillCount} {onFill} {onClear} onPause={() => pause.show()} {onReset} {onUndo} {onToggleNote} onShowSettings={() => settings.show()} />
+    <Control {fillCount} {activeNotes} {onFill} {onClear} onPause={() => pause.show()} {onReset} {onUndo} {onToggleNote} onShowSettings={() => settings.show()} />
     <div class="grow"></div>
     <div class="text-center text-xs text-gray-500 mt-16 mb-2">
         <a href="https://github.com/pgmmpk/sudoku">

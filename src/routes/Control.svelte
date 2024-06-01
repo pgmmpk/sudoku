@@ -3,7 +3,7 @@
     import { haptic } from '$lib/settings.svelte.js';
     import { superclick } from '$lib/actions.js';
 
-    const { fillCount, onFill, onToggleNote, onClear, onReset, onUndo, onPause, onShowSettings } = $props();
+    const { fillCount, activeNotes, onFill, onToggleNote, onClear, onReset, onUndo, onPause, onShowSettings } = $props();
 
     let fill = $state(true);
 
@@ -37,6 +37,8 @@
     
     Mousetrap.bind ('del', () => onClear());
 
+    $inspect({activeNotes})
+
 </script>
 <div class="mt-4 flex flex-col items-center justify-center touch-none">
     <div class="mt-4 grid grid-cols-5 items-center justify-center sized">
@@ -69,7 +71,9 @@
     </div>
     <div class="mt-4 grid grid-cols-9 items-center justify-center sized">
         {#each '123456789' as digit}
-        <button disabled={fillCount[+digit] >= 9 && fill} class="control hover:bg-gray-200 disabled:text-gray-400" class:font-thin={!fill} class:italic={!fill} use:superclick={() => haptic(onfire(+digit))}>{digit}</button>
+        <button disabled={fillCount[+digit] >= 9 && fill} class="control hover:bg-gray-200 disabled:text-gray-400"
+            class:font-thin={!fill && !activeNotes.includes(+digit)} class:italic={!fill}
+            use:superclick={() => haptic(onfire(+digit))}>{digit}</button>
         {/each}
     </div>
 </div>
