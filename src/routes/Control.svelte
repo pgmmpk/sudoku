@@ -72,7 +72,9 @@
     <div class="mt-4 grid grid-cols-9 items-center justify-center sized">
         {#each '123456789' as digit}
         <button disabled={fillCount[+digit] >= 9 && fill} class="control hover:bg-gray-200 disabled:text-gray-400"
-            class:font-thin={!fill && !activeNotes.includes(+digit)} class:italic={!fill}
+            class:font-thin={!fill && !activeNotes.includes(+digit)}
+            class:font-light={!fill && activeNotes.includes(+digit)}
+            class:italic={!fill}
             use:superclick={() => haptic(onfire(+digit))}>{digit}</button>
         {/each}
     </div>

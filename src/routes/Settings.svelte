@@ -31,7 +31,7 @@
     </div>
     <div class="my-8 ml-4 flex justify-center">
         <label class="mr-4 p-2" for="#difficulty">Difficulty:</label>
-        <select class="p-2 rounded px-4 border border-gray-700" id="difficulty" bind:value={level.index} >
+        <select class="p-2 rounded px-4 border border-gray-700 outline-none" id="difficulty" bind:value={level.index} >
             {#each LEVELS as l}
             <option value={l.index} selected={l.index==level.index}>{l.label}</option>
             {/each}
