@@ -129,11 +129,12 @@
 
         locateConflicts () {
             for (let i = 0; i < 81; i++) {
+                this.cells[i].error = false;
+
                 if (this.cells[i].static || this.cells[i].digit === undefined) {
                     continue;
                 }
 
-                this.cells[i].error = false;
                 for (const peer of this.peers[i]) {
                     if (this.cells[peer].digit == this.cells[i].digit) {
                         this.cells[i].error = true;
@@ -198,6 +199,7 @@
     });
 
     function handleCellSelected (id) {
+        if (board.isError()) return;
         selected = id;
     }
 
@@ -265,6 +267,7 @@
     function onFill (digit) {
         const index = $state.snapshot(selected);
         if (reveal || board.cells[index].frozen || fillCount[digit] >= 9) {
+            console.log(board.isError())
             return;
         }
         const oldDigit = board.cells[index].digit;
@@ -282,7 +285,7 @@
     }
 
     function onToggleNote (digit) {
-        if (reveal) {
+        if (reveal || board.isError()) {
             return;
         }
         const index = $state.snapshot(selected);
@@ -293,7 +296,7 @@
     }
 
     function onClear () {
-        if (reveal) {
+        if (reveal || board.isError()) {
             return;
         }
         const index = $state.snapshot(selected);
@@ -316,7 +319,7 @@
         try {
             if (inOnReset !== 1) return;
 
-            if (board.isTouched() && !reveal) {
+            if ((mistakes.count > 0 || board.isTouched()) && !reveal) {
                 const response = await modal.show(
                     'Abandon this game?',
                     ['OK', 'Cancel', 'Reveal solution'],

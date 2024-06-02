@@ -36,9 +36,6 @@
     Mousetrap.bind ('ctrl+9', () => onToggleNote(9));
     
     Mousetrap.bind ('del', () => onClear());
-
-    $inspect({activeNotes})
-
 </script>
 <div class="mt-4 select-none flex flex-col items-center justify-center touch-none">
     <div class="mt-4 grid grid-cols-5 items-center justify-center sized">
