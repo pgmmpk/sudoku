@@ -1,7 +1,6 @@
 <script>
     import { scale } from 'svelte/transition';
     import { createPromiser } from '$lib/settings.svelte.js';
-    import { superclick } from '$lib/actions.js';
 
     let showing = $state(false);
     let mess = $state('');
@@ -27,7 +26,7 @@
     <div class="w-2/3 bg-white border-1 border-gray-500 rounded text-center m-4 my-8">
         <div class="my-4">{mess}</div>
         {#each butt as text}
-        <button class="m-2 p-2 border rounded touch-none" use:superclick={() => hide(text)}>{text}</button>
+        <button class="m-2 p-2 border rounded touch-none" onpointerdown={() => hide(text)}>{text}</button>
         {/each}
     </div>
 </div>

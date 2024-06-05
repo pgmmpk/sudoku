@@ -1,5 +1,4 @@
 <script>
-    import { superclick } from '$lib/actions.js';
     const { id, selected, activeDigit, frozen, error, digit, solution, notes, reveal, onselected } = $props();
 
     const isSelected = $derived(id == selected);
@@ -37,7 +36,7 @@
 
 <div class="select-none font-light border border-gray-400 text-gray-700 items-center justify-center flex relative touch-none"
     class:bg-blue-300={isSelected} class:bg-blue-50={isSelectedCol || isSelectedRow || isSelectedBlock} class:bg-blue-200={isActive}
-    use:superclick={() => onselected && onselected(id)} role="presentation"
+    onpointerdown={() => onselected && onselected(id)} role="presentation"
 >
 {#if digit}
 {#if reveal && solution != digit}

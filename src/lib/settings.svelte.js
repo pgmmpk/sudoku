@@ -1,15 +1,3 @@
-function save (name, object) {
-    localStorage.setItem(name, JSON.stringify(object, null, 2));
-}
-
-function load (name) {
-    const saved = localStorage.getItem(name);
-    if (saved === null) {
-        return undefined;
-    }
-    return JSON.parse(saved);
-}
-
 export const LEVELS = [
     { label: 'Beginner', value: 20, index: 0 },
     { label: 'Easy',     value: 35, index: 1 },
@@ -18,45 +6,53 @@ export const LEVELS = [
     { label: 'Insane',   value: 64, index: 4 },
 ];
 
-export const settings = (() => {
-    let state = $state({
-        vibrate: true,
-    });
-    const name = 'settings';
+class Persistence {
+    VERSION = '1'
 
-    const saved = load(name);
-    if (saved !== undefined) {
-        state = saved;
+    constructor (name) {
+        this.name = name;
     }
+
+    load (deflt) {
+        const saved = localStorage.getItem(this.VERSION + '/' + this.name);
+        if (saved === null) {
+            return deflt;
+        }
+        return JSON.parse(saved);
+    }
+
+    save (val) {
+        localStorage.setItem(this.VERSION + '/' + this.name, JSON.stringify(val, null, 2));
+        return val;
+    }
+}
+
+export const settings = (() => {
+    const persistence = new Persistence('settings');
+    let state = $state(persistence.load({
+        vibrate: true,
+    }));
 
     return {
         get vibrate () { return state.vibrate; },
-        set vibrate (what) { state.vibrate = what; save(name, state); },
+        set vibrate (what) { state.vibrate = persistence.save(what); },
     };
 })();
 
 export function haptic () {
-    if (settings.vibrate) {
-        navigator.vibrate &&  navigator.vibrate(5);
-    }
+    settings.vibrate && navigator.vibrate && setTimeout(() => { navigator.vibrate(5); }, 0);
 }
 
 export const level = (() => {
-    let state = $state(LEVELS[0]);
-    const name = 'level';
-
-    const saved = load(name);
-    if (saved !== undefined) {
-        state = LEVELS[saved.index];
-    }
+    const persistence = new Persistence('level');
+    let state = $state(persistence.load(0));
 
     return {
         get label () { return state.label; },
         get value () { return state.value; },
         get index () { return state.index; },
         set index (value) {
-            state = LEVELS[value];
-            save(name, state);
+            state = LEVELS[persistence.save(value)];
         },
     };
 })();
@@ -116,24 +112,16 @@ export const stopwatch = (() => {
 })();
 
 export const undo = (() => {
+    const persistence = new Persistence('undo');
+    const savedTime = new Persistence('time');
     const out = new EventTarget();
 
-    const name = 'undo';
-    const stack = [];
-
-    const saved = load(name);
-    if (saved !== undefined) {
-        stack.push(...saved);
-    }
-
-    const savedTime = load('time');
-    if (savedTime) {
-        stopwatch.time = savedTime;
-    }
+    const stack = persistence.load([]);
+    stopwatch.time = savedTime.load(0);
 
     function saveme() {
-        save(name, stack);
-        save('time', stopwatch.time);
+        persistence.save(stack);
+        savedTime.save(stopwatch.time);
     }
 
     function undo () {
@@ -183,82 +171,40 @@ export const undo = (() => {
 })();
 
 export const game = (() => {
-    const name = 'game';
-    let level = $state(LEVELS[0].label);
-    let puzzle = "..56....8413.28659.2.91534.2615749835978364.28342917..38216957415.48723674.352891";
-    let solution = "975643128413728659628915347261574983597836412834291765382169574159487236746352891";
-    const saved = localStorage.getItem(name);
-    if (saved) {
-        ({ level, puzzle, solution } = JSON.parse(saved));
-        if (solution === undefined) {  // avoid crash on upgrade
-            level = LEVELS[0].label;
-            puzzle = "..56....8413.28659.2.91534.2615749835978364.28342917..38216957415.48723674.352891";
-            solution = "975643128413728659628915347261574983597836412834291765382169574159487236746352891";
-        }
-    }
+    const persistence = new Persistence('game');
+    let state = $state(persistence.load({
+        level: LEVELS[0].label,
+        puzzle: "..56....8413.28659.2.91534.2615749835978364.28342917..38216957415.48723674.352891",
+        solution: "975643128413728659628915347261574983597836412834291765382169574159487236746352891",
+    }));
 
     function set (options) {
-        ( {level, puzzle, solution } = options );
-        localStorage.setItem(name, JSON.stringify({ level, puzzle, solution }));
+        state = persistence.save(options);
     }
 
     return {
         set,
-        get level () { return level; },
-        get puzzle () { return puzzle; },
-        get solution () { return solution; },
+        get level () { return state.level; },
+        get puzzle () { return state.puzzle; },
+        get solution () { return state.solution; },
     };
-})();
-
-export const modal = (() => {
-    let show = $state(false);
-    let type = $state('info');
-    let mess = $state('');
-
-    let done;
-
-    function complete () {
-        show = false;
-        done && done();
-    }
-
-    function info (message, onok) {
-        type = 'info';
-        mess = message;
-        show = true;
-        done = onok;
-    };
-
-    return {
-        info,
-        get show () { return show; },
-        get type () { return type; },
-        get message () { return mess; },
-        complete,
-    }
 })();
 
 export const mistakes = (() => {
-    let count = $state(0);
+    const persistence = new Persistence('mistakes');
+    let count = $state(persistence.load(0));
     const limit = 3;
     let freeze = false;
     const name = 'mistakes';
 
-    const saved = load(name);
-    if (saved !== undefined) {
-        count = saved;
-    }
-
     function increment () {
         if (!freeze) {
-            count += 1;
-            save(name, count);
+            count = persistence.save(count + 1);
         }
     }
 
     function reset () {
-        count = 0;
-        save(name, count);
+        count = persistence.save(0);
     }
 
     function withFreeze (f) {
@@ -310,56 +256,35 @@ export function createPromiser () {
 }
 
 export const stats = (() => {
-    const name = 'stats';
-    let lostCount = $state(0);
-    let wonCount = $state(0);
-
-    const saved = load(name);
-    if (saved !== undefined) {
-        ({ lostCount, wonCount } = saved);
-    }
+    const persistence = new Persistence('stats');
+    let stats = $state(persistence.load({
+        lostCount: 0,
+        wonCount: 0,
+    }));
 
     function lost() {
-        lostCount += 1;
-        save(name, {lostCount, wonCount});
+        stats.lostCount += 1;
+        persistence.save(stats);
     }
 
     function won () {
-        wonCount += 1;
-        save(name, {lostCount, wonCount});
+        stats.wonCount += 1;
+        persistence.save(stats);
     }
 
     function reset () {
-        wonCount = 0;
-        lostCount = 0;
-        save(name, {lostCount, wonCount});
+        stats = persistence.save({
+            lostCount: 0,
+            wonCount: 0,
+        });
     }
 
     return {
-        get lostCount () { return lostCount; },
-        get wonCount () { return wonCount; },
+        get lostCount () { return stats.lostCount; },
+        get wonCount () { return stats.wonCount; },
 
         lost,
         won,
-        reset,
-    };
-})();
-
-const filled = (() => {
-    const value = $state({});
-
-    function reset(puzzle) {
-        for (const digit of '123456789') {
-            value[digit] = 0;
-        }
-        for (const digit of puzzle) {
-            if (digit === '.') continue;
-            value[digit] += 1;
-        }
-    }
-
-    return {
-        get value () { return value; },
         reset,
     };
 })();

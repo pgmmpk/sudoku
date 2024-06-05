@@ -1,11 +1,3 @@
-export const LEVEL = {
-    EASY:   28,
-    MEDIUM: 35,
-    HARD:   40,
-    MASTER: 52,
-    INSANE: 64,
-};
-
 const ROWS = 'ABCDEFGHI'
 const COLS = '123456789';
 const DIGITS = COLS;
