@@ -45,7 +45,7 @@ export function haptic () {
 
 export const level = (() => {
     const persistence = new Persistence('level');
-    let state = $state(persistence.load(0));
+    let state = $state(LEVELS[persistence.load(0)]);
 
     return {
         get label () { return state.label; },

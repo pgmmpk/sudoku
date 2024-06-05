@@ -250,10 +250,9 @@
 
     async function reset () {
         reveal = false;
-        const levelLabel = level.label;
         boardComponent && await boardComponent.hide();
         const { puzzle, solution } = createPuzzle({ level: level.value });
-        game.set({ level: levelLabel, puzzle, solution });
+        game.set({ level: level.label, puzzle, solution });
         board = new Board({ puzzle, solution });
         undo.clear();
         stopwatch.reset();
