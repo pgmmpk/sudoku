@@ -72,17 +72,18 @@ export const stopwatch = (() => {
     }
 
     function start () {
-        stop();
-        interval = setInterval(() => { 
-            seconds += 1; 
-            if (seconds >= 60) {
-                seconds = 0;
-                minutes += 1;
-                if (minutes >= 60) {
-                    hours += 1;
+        if (interval === null) {
+            interval = setInterval(() => { 
+                seconds += 1; 
+                if (seconds >= 60) {
+                    seconds = 0;
+                    minutes += 1;
+                    if (minutes >= 60) {
+                        hours += 1;
+                    }
                 }
-            }
-        }, 1000);
+            }, 1000);
+        }
     }
 
     function reset () {
@@ -96,7 +97,6 @@ export const stopwatch = (() => {
         get seconds () { return seconds; },
         get minutes () { return minutes; },
         get hours () { return hours; },
-        get ticking () { return interval !== null; },
         get time () {
             return seconds + minutes * 60 + hours * 60 * 60;
         },

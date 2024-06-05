@@ -175,13 +175,11 @@
         }
     }
 
-    // const game = '.8291763.1..8.6....6....58...54.9.7.9.4.6.12......5..6.7638.....9..7436.3586.24.7';
-    //const game = '68.7....2..9...8..3...9.............7..91.48.....38.75..13.56...5..6.3.......7..9'
     stopwatch.start();
 
     let board = $state(new Board(game));
 
-    let fillCount = $derived.by(() => {
+    const fillCount = $derived.by(() => {
         const out = {};
         for (let i = 0; i < 81; i++) {
             if (board.cells[i].digit !== undefined) {
@@ -208,7 +206,6 @@
     let reveal = $state(false);
 
     undo.addEventListener('board:clear', x => {
-        const oldDigit = board.cells[x.index].digit;
         board.clear(x.index);
     });
     undo.addEventListener('board:fill', async x => {
@@ -253,15 +250,16 @@
         boardComponent && await boardComponent.hide();
         const { puzzle, solution } = createPuzzle({ level: level.value });
         game.set({ level: level.label, puzzle, solution });
-        board = new Board({ puzzle, solution });
+        board = new Board(game);
         undo.clear();
         stopwatch.reset();
-        stopwatch.start();
         mistakes.reset();
         boardComponent && await boardComponent.show();
+        stopwatch.start();
     }
 
     Mousetrap.bind ('meta+z', onUndo);
+    Mousetrap.bind ('ctrl+z', onUndo);
 
     function onFill (digit) {
         const index = $state.snapshot(selected);
@@ -349,13 +347,11 @@
     let settings;
 
     function suspendTimer () {
-        if (stopwatch.ticking) {
-            stopwatch.stop();
-        }
+        stopwatch.stop();
     }
 
     function resumeTimer () {
-        if (!pause.isShowing() && !settings.isShowing() && !stopwatch.ticking) {
+        if (!pause.isShowing() && !settings.isShowing()) {
             stopwatch.start();
         }
     }
